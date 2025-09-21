@@ -68,12 +68,10 @@
 (defn play-winter-water []
   (live/play winter-water-phrase))
 
-(defn loop-winter-water [times]
-  (let [phrase-duration (* 4 bar-duration)
-        looped-phrase (->> (range times)
-                          (mapcat #(->> winter-water-phrase
-                                       (after (* % phrase-duration)))))]
-    (live/play looped-phrase)))
+(comment
+ (->> winter-water-phrase var live/jam) 
+ (live/stop)
+)
 
 (defn -main
   [& args]
