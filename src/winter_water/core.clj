@@ -7,13 +7,6 @@
             [overtone.core :as overtone]
             [overtone.inst.synth :as synth]))
 
-(defn boot-server! []
-  (try
-    (overtone/boot-internal-server)
-    (println "SuperCollider server booted successfully!")
-    (catch Exception e
-      (println "Failed to boot server:" (.getMessage e)))))
-
 (defn note [time duration pitch]
   {:time time :duration duration :pitch pitch})
 
