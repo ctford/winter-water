@@ -15,13 +15,22 @@ It's an annoying Supercollider thing that happens when the microphone and speake
 
 For live coding and jamming, use these scripts with fixed port 7888:
 
-- `./start-nrepl.sh` - Start nREPL server (run in background)
+- `./start-nrepl.sh` - Start nREPL server on port 7888 (run in background)
 - `./jam.sh` - Start jamming the winter-water track
-- `./reload.sh` - Reload the core file to pick up code changes
+- `./reload.sh` - Reload the core file to pick up code changes  
 - `./stop.sh` - Stop jamming
 
-Typical workflow:
-1. Run `./start-nrepl.sh &` to start server in background
-2. Edit code in `src/winter_water/core.clj`
-3. Use `./reload.sh` to pick up changes
-4. Use `./jam.sh` and `./stop.sh` to control playback
+### Quick Start
+```bash
+./start-nrepl.sh &  # Start server in background
+./jam.sh           # Begin jamming
+```
+
+### Typical Live Coding Workflow
+1. Start the nREPL server: `./start-nrepl.sh &`
+2. Begin jamming: `./jam.sh`
+3. Edit code in `src/winter_water/core.clj`
+4. Reload changes: `./reload.sh`
+5. Stop when done: `./stop.sh`
+
+The server runs continuously, so you only need to start it once. Use `./reload.sh` to pick up code changes without stopping the music, and `./jam.sh`/`./stop.sh` to control playback.
