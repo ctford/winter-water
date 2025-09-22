@@ -1,79 +1,77 @@
 (ns winter-water.core
-  (:require [leipzig.melody :refer :all]
-            [leipzig.scale :as scale]
-            [leipzig.chord :as chord]
-            [leipzig.live :as live]
-            [leipzig.temperament :as temperament]
-            [overtone.core :as overtone]
-            [overtone.inst.synth :as synth]))
-
-(defn note [time duration pitch]
-  {:time time :duration duration :pitch pitch})
+  (:require 
+    [overtone.live :refer :all :exclude [stop sharp flat]]
+    [leipzig.melody :refer :all]
+    [leipzig.scale :as scale]
+    [leipzig.chord :as chord]
+    [leipzig.live :as live]
+    [leipzig.temperament :as temperament]
+    [overtone.inst.synth :as synth]))
 
 (def chord-progression
-  {:bb (chord/triad :Bb :major)
-   :c (chord/triad :C :major)
-   :edim-bb (chord/triad :E :diminished)
-   :am (chord/triad :A :minor)
-   :dm (chord/triad :D :minor)})
+  [(-> chord/triad (chord/root 3) (chord/inversion 2))
+   (-> chord/triad (chord/root 4) (chord/inversion 2))
+   (-> chord/triad (chord/root 6) (chord/inversion 1))
+   (-> chord/triad (chord/root 2))
+   (-> chord/triad (chord/root 5) (chord/inversion 2))
+   (-> chord/triad (chord/root 4) (chord/inversion 2))])
 
-(def root-notes
-  {:bb :Bb
-   :c :C
-   :edim-bb :Bb
-   :am :A
-   :dm :D})
+(def harmonic-rhythm [7/2 4/2 3/2 7/2 4/2 3/2])
 
-(def bar-duration 7/8)
-(def eighth-note 1/8)
+(def chord-roots [3 4 3 2 5 4])
 
-(defn create-chord-sequence []
-  (let [bb-bar (note 0 bar-duration (:bb chord-progression))
-        c-edim-bar [(note bar-duration (* 4 eighth-note) (:c chord-progression))
-                    (note (+ bar-duration (* 4 eighth-note)) (* 3 eighth-note) (:edim-bb chord-progression))]
-        am-bar (note (* 2 bar-duration) bar-duration (:am chord-progression))
-        dm-c-bar [(note (* 3 bar-duration) (* 4 eighth-note) (:dm chord-progression))
-                  (note (+ (* 3 bar-duration) (* 4 eighth-note)) (* 3 eighth-note) (:c chord-progression))]]
-    (concat [bb-bar] c-edim-bar [am-bar] dm-c-bar)))
+(def bass-line
+  (->> (phrase harmonic-rhythm chord-roots) 
+       (where :pitch (comp scale/lower scale/lower scale/lower))))
 
-(defn create-bass-line []
-  (let [bb-note (note 0 bar-duration (:bb root-notes))
-        c-note (note bar-duration (* 4 eighth-note) (:c root-notes))
-        bb-note-2 (note (+ bar-duration (* 4 eighth-note)) (* 3 eighth-note) (:edim-bb root-notes))
-        am-note (note (* 2 bar-duration) bar-duration (:am root-notes))
-        dm-note (note (* 3 bar-duration) (* 4 eighth-note) (:dm root-notes))
-        c-note-2 (note (+ (* 3 bar-duration) (* 4 eighth-note)) (* 3 eighth-note) (:c root-notes))]
-    [bb-note c-note bb-note-2 am-note dm-note c-note-2]))
+(def chords
+  (->> (phrase harmonic-rhythm chord-progression)
+       (where :pitch scale/lower)
+       (all :part :chords)))
 
-(defn transpose-bass [bass-line octave-offset]
-  (->> bass-line
-       (map #(update % :pitch + (* 12 octave-offset)))))
-
-(defn create-organ-chords []
-  (create-chord-sequence))
-
-(def bass-part
-  (->> (create-bass-line)
-       (transpose-bass -2)
-       (where :part (is :bass))))
-
-(def organ-part
-  (->> (create-organ-chords)
-       (where :part (is :organ))))
-
-(def winter-water-phrase
-  (->> (concat bass-part organ-part)
+(def winter-water
+  (->> chords
+       (with bass-line)
+       (where :pitch (comp scale/F scale/major))
        (tempo (bpm 120))))
 
-(defn play-winter-water []
-  (live/play winter-water-phrase))
+(definst bass [freq 110 dur 1.0 res 1000 volume 1.0]
+  (-> (sin-osc freq)
+      (+ (* 1/3 (sin-osc (* 2 freq))))
+      (+ (* 1/2 (sin-osc (* 3 freq))))
+      (+ (* 1/3 (sin-osc (* 5 freq))))
+      (* (square 2))
+      (clip2 0.6)
+      (* volume)
+      (* (env-gen (adsr 0.01 0.2 0.3 0.1) (line:kr 1 0 dur) :action FREE))))
+
+(definst organ [freq 110 dur 1.0 res 1000 volume 1.0]
+  (-> (sin-osc freq)
+      (+ (* 1/3 (sin-osc (* 2 freq))))
+      (+ (* 1/2 (sin-osc (* 4 freq))))
+      (* 9)
+      (clip2 (line:kr 0.6 0.1 3.5))
+      (rlpf (line:kr 2000 100 3.5) 0.8)
+      (* volume)
+      (* (env-gen (adsr 0.04 0.1 0.5 0.1) (line:kr 1 0 dur) :action FREE))))
+
+(defmethod live/play-note :default
+  [{midi :pitch seconds :duration}]
+  (let [freq (midi->hz midi)]
+    (bass freq seconds :volume 1.5)))
+
+(defmethod live/play-note :chords
+  [{midi :pitch seconds :duration}]
+  (let [freq (midi->hz midi)]
+    (organ freq seconds :volume 0.2)))
 
 (comment
- (->> winter-water-phrase var live/jam) 
+ (->> winter-water var live/jam) 
+ (->> winter-water live/play) 
  (live/stop)
 )
 
 (defn -main
   [& args]
   (println "Starting Winter Water...")
-  (play-winter-water))
+  (->> winter-water (take 1) live/play))
