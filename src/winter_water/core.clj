@@ -10,18 +10,24 @@
 
 (def chord-progression
   [(-> chord/triad (chord/root 3) (chord/inversion 2))
+   (-> chord/triad (chord/root 3) (chord/inversion 2))
    (-> chord/triad (chord/root 4) (chord/inversion 2))
    (-> chord/triad (chord/root 6) (chord/inversion 1))
+   (-> chord/triad (chord/root 2))
    (-> chord/triad (chord/root 2))
    (-> chord/triad (chord/root 5) (chord/inversion 2))
    (-> chord/triad (chord/root 4) (chord/inversion 2))])
 
-(def harmonic-rhythm [7/2 4/2 3/2 7/2 4/2 3/2])
+(def harmonic-rhythm [6/2 1/2 4/2 3/2 6/2 1/2 4/2 3/2])
 
 (def chord-roots [3 4 3 2 5 4])
 
+(def bass-rhythm [7/2 4/2 2/2 1/2 7/2 4/2 1 1/2])
+
+(def bass-pitches [3 4 3 3 2 5 4 1])
+
 (def bass-line
-  (->> (phrase harmonic-rhythm chord-roots) 
+  (->> (phrase bass-rhythm bass-pitches) 
        (where :pitch (comp scale/lower scale/lower scale/lower))))
 
 (def chords
