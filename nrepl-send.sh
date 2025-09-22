@@ -1,6 +1,5 @@
 #!/bin/bash
-
-# Script to send commands to the running nREPL server
+# Fast nREPL client - sends commands directly to port 7888
 # Usage: ./nrepl-send.sh "(+ 1 1)"
 
 if [ $# -eq 0 ]; then
@@ -9,6 +8,4 @@ if [ $# -eq 0 ]; then
     exit 1
 fi
 
-NREPL_PORT=$(cat .nrepl-port 2>/dev/null || echo "57244")
-
-echo "$1" | lein repl :connect 127.0.0.1:$NREPL_PORT
+./nrepl-send.py "$1" 127.0.0.1 7888
