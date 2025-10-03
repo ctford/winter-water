@@ -1,12 +1,16 @@
 (ns winter-water.core
   (:require 
-    [overtone.live :refer :all :exclude [stop sharp flat]]
+    [overtone.core :refer :all :exclude [stop sharp flat]]
     [leipzig.melody :refer :all]
     [leipzig.scale :as scale]
     [leipzig.chord :as chord]
     [leipzig.live :as live]
     [leipzig.temperament :as temperament]
     [overtone.inst.synth :as synth]))
+
+(when-not (server-connected?)
+  (boot-internal-server {:num-input-bus-channels 0 
+                         :input-device-id -1}))
 
 (def chord-progression
   [(-> chord/triad (chord/root 3) (chord/inversion 2))
