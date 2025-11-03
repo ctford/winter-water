@@ -31,7 +31,10 @@
 (def bass-pitches [3 4 3 3 2 5 4 1])
 
 (def bass-line
-  (->> (phrase bass-rhythm bass-pitches) 
+  ;; Repeating single note - revert by uncommenting below and removing this
+  (->> (phrase bass-rhythm (repeat 3))
+       (where :pitch (comp scale/lower scale/lower scale/lower)))
+  #_(->> (phrase bass-rhythm bass-pitches)
        (where :pitch (comp scale/lower scale/lower scale/lower))))
 
 (def chords
@@ -72,7 +75,9 @@
 
 (defmethod live/play-note :chords
   [{midi :pitch seconds :duration}]
-  (let [freq (midi->hz midi)]
+  ;; Suppressed temporarily
+  nil
+  #_(let [freq (midi->hz midi)]
     (organ freq seconds :volume 0.2)))
 
 (comment
