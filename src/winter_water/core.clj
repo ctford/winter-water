@@ -62,9 +62,13 @@
   (->> (phrase hihat-rhythm (repeat 0))
        (all :part :hihat)))
 
-(def melody-rhythm [3/2 1 3/2 1 1 3/2 1 1 3/2 1])
+(def melody-rhythm
+  ;; Emphasizing 2+2+3 pattern with accented notes on strong beats
+  [1 1 1/2 1/2 1 1 1/2 3/2 1 1 1/2 1/2 1 1 1/2 1 1/2])
 
-(def melody-pitches [5 6 8 7 6 5 7 6 5 4])
+(def melody-pitches
+  ;; Busier line with accents on 2+2+3 beats
+  [5 4 5 6 8 7 8 8 7 6 5 6 7 6 7 6 4])
 
 (def melody-line
   (->> (phrase melody-rhythm melody-pitches)
