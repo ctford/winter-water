@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "mcp-nrepl": {
+      "type": "stdio",
+      "command": "bb",
+      "args": ["../mcp-nrepl/mcp-nrepl.bb"],
+      "env": {}
+    }
+  }
+}

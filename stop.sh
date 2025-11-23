@@ -1,4 +1,4 @@
 #!/bin/bash
 # Stop jamming
 echo "Stopping jam..."
-./nrepl-send.sh "(leipzig.live/stop)"
+bb ../mcp-nrepl/mcp-nrepl.bb --eval "(leipzig.live/stop)"

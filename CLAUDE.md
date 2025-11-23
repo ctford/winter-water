@@ -1,8 +1,11 @@
-If Overtone doesn't start, look for this error:
+## Architecture
 
-    ERROR: Input sample rate is 16000, but output is 44100. Mismatched sample rates are not supported. To disable input, set the number of input channels to 0.
+This project uses:
+- **Overtone 0.16.3331** - External SuperCollider connection only (no embedded binaries)
+- **SuperCollider 3.14.0** - Installed via Homebrew with ARM64 (Apple Silicon) support
+- **Java 17** - Managed via jenv for compatibility
 
-It's an annoying Supercollider thing that happens when the microphone and speakers aren't using the same bitrate.
+The setup starts scsynth externally on port 57110, and Overtone connects to it.
 
 - Start a REPL for performance with `lein repl`.
 - To trigger the bass synth: `echo "(bass 55 2.0)" | lein repl` (frequency, duration)
@@ -11,26 +14,57 @@ It's an annoying Supercollider thing that happens when the microphone and speake
   2. Connect and play: `echo "(bass 110 1.0)" | lein repl :connect 127.0.0.1:PORT`
   3. This avoids reloading Overtone each time since the server stays running
 
-## Performance Scripts
+## Live Coding with MCP-nREPL
 
-For live coding and jamming, use these scripts with fixed port 7888:
+This project uses MCP-nREPL for both fast shell scripts and AI-assisted development.
 
-- `./start-nrepl.sh` - Start nREPL server on port 7888 (run in background)
+### Setup
+1. Start the servers: `./start-nrepl.sh`
+   - Starts scsynth (SuperCollider) on port 57110
+   - Starts nREPL on port 7888 and creates `.nrepl-port`
+   - Both run continuously in the background
+2. Stop the servers: `./stop-nrepl.sh`
+   - Stops both scsynth and nREPL
+
+### Two Ways to Control the Session
+
+#### Option 1: Shell Scripts (Fast Performance Control)
+
+For live performance where milliseconds matter:
+
 - `./jam.sh` - Start jamming the winter-water track
-- `./reload.sh` - Reload the core file to pick up code changes  
+- `./reload.sh` - Reload code changes
 - `./stop.sh` - Stop jamming
 
-### Quick Start
-```bash
-./start-nrepl.sh &  # Start server in background
-./jam.sh           # Begin jamming
-```
+These scripts use `mcp-nrepl.bb --eval` for direct nREPL execution (~0.1s response time).
 
-### Typical Live Coding Workflow
-1. Start the nREPL server: `./start-nrepl.sh &`
-2. Begin jamming: `./jam.sh`
-3. Edit code in `src/winter_water/core.clj`
-4. Reload changes: `./reload.sh`
-5. Stop when done: `./stop.sh`
+#### Option 2: Claude Code (AI-Assisted Development)
 
-The server runs continuously, so you only need to start it once. Use `./reload.sh` to pick up code changes without stopping the music, and `./jam.sh`/`./stop.sh` to control playback.
+For development, experimentation, and iteration:
+
+**Start jamming:**
+- "Start jamming winter-water"
+
+**Reload code changes:**
+- "Reload the core file"
+
+**Stop playing:**
+- "Stop the jam"
+
+**Experiment:**
+- "Try making the bass slower"
+- "Play just the melody line"
+- Claude can evaluate code, inspect state, and iterate
+
+Claude Code connects via the `.mcp.json` configuration and has access to:
+- `eval-clojure` - Evaluate any Clojure expression
+- `load-file` - Reload Clojure source files
+- `set-ns` - Switch namespaces
+- `apropos` - Search for symbols
+
+### Best of Both Worlds
+
+- **Shell scripts** for muscle memory and instant control during performance
+- **Claude Code** for exploratory coding, debugging, and trying variations
+- **Same nREPL connection** - both approaches talk to the same running session
+- **No Python dependency** - everything uses babashka via mcp-nrepl

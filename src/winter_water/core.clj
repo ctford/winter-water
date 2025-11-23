@@ -9,8 +9,7 @@
     [overtone.inst.synth :as synth]))
 
 (when-not (server-connected?)
-  (boot-internal-server {:num-input-bus-channels 0 
-                         :input-device-id -1}))
+  (connect-server "127.0.0.1" 57110))
 
 (def chord-progression
   [(-> chord/triad (chord/root 3) (chord/inversion 2))
