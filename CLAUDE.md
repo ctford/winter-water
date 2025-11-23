@@ -20,11 +20,12 @@ This project uses MCP-nREPL for both fast shell scripts and AI-assisted developm
 
 ### Setup
 1. Start the servers: `./start-nrepl.sh`
-   - Starts scsynth (SuperCollider) on port 57110
-   - Starts nREPL on port 7888 and creates `.nrepl-port`
-   - Both run continuously in the background
+   - Starts scsynth (SuperCollider) on port 57110 in background
+   - Starts nREPL on port 7888 and creates `.nrepl-port` (runs in foreground)
+   - Run in a separate terminal, or use `./start-nrepl.sh &` to background it
 2. Stop the servers: `./stop-nrepl.sh`
    - Stops both scsynth and nREPL
+   - Cleans up `.nrepl-port` file
 
 ### Two Ways to Control the Session
 
