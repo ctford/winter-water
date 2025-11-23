@@ -68,3 +68,38 @@ Claude Code connects via the `.mcp.json` configuration and has access to:
 - **Claude Code** for exploratory coding, debugging, and trying variations
 - **Same nREPL connection** - both approaches talk to the same running session
 - **No Python dependency** - everything uses babashka via mcp-nrepl
+
+## Development Tips
+
+### Session State Persistence
+After using `load-file` to reload code, the nREPL session retains all context. You can evaluate expressions directly without repeated `in-ns` or `require` calls:
+
+```clojure
+;; After load-file, just evaluate directly:
+(duration bass-line)
+(take 4 winter-water)
+```
+
+### Iterative Development Pattern
+When working on complex compositions, isolate parts by suppressing others:
+
+```clojure
+;; Suppress a part temporarily
+(defmethod live/play-note :chords
+  [{midi :pitch seconds :duration}]
+  nil
+  #_(let [freq (midi->hz midi)]
+    (organ freq seconds :volume 0.2)))
+```
+
+Then test in isolation, verify it works, and bring parts back one by one using `load-file`.
+
+### Verifying Musical Durations
+Always check that patterns sum to the correct total duration:
+
+```clojure
+(require '[leipzig.melody :refer [duration]])
+(duration kick-pattern)  ; Should equal 14 for 4 bars of 7/8
+```
+
+For 7/8 time: 4 bars × 7 eighth notes = 28 eighth notes = 14 beats total. Each bar = 3.5 beats.
