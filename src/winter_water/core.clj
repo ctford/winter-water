@@ -75,6 +75,12 @@
        (where :pitch scale/raise)
        (all :part :melody)))
 
+(def texture-rhythm [6 8])
+
+(def texture-pattern
+  (->> (phrase texture-rhythm (repeat 0))
+       (all :part :texture)))
+
 (def chords
   (->> (phrase harmonic-rhythm chord-progression)
        (where :pitch scale/lower)
@@ -84,6 +90,7 @@
   (->> chords
        (with bass-line)
        (with melody-line)
+       (with texture-pattern)
        (with kick-pattern)
        (with snare-pattern)
        (with hihat-pattern)
@@ -141,6 +148,18 @@
       (* volume)
       (* (env-gen (adsr 0.15 0.3 0.6 0.4) (line:kr 1 0 dur) :action FREE))))
 
+(definst ambient-texture [freq 200 dur 4.0 volume 0.15]
+  (let [noise (pink-noise)
+        random-lfo (lf-noise1:kr 0.3)
+        random-lfo2 (lf-noise1:kr 0.17)
+        filter-freq (+ 300 (* 1800 (+ 0.5 (* 0.5 random-lfo))))
+        resonance (+ 0.2 (* 0.3 (+ 0.5 (* 0.5 random-lfo2))))]
+    (-> noise
+        (rlpf filter-freq resonance)
+        (rlpf filter-freq resonance)
+        (* volume)
+        (* (env-gen (adsr 1.5 0.5 0.7 2.0) (line:kr 1 0 dur) :action FREE)))))
+
 (defmethod live/play-note :default
   [{midi :pitch seconds :duration}]
   (let [freq (midi->hz midi)]
@@ -167,6 +186,10 @@
   [{midi :pitch seconds :duration}]
   (let [freq (midi->hz midi)]
     (breathy-lead freq seconds :volume 0.35)))
+
+(defmethod live/play-note :texture
+  [{midi :pitch seconds :duration}]
+  (ambient-texture 200 seconds :volume 0.18))
 
 (comment
  (->> winter-water var live/jam) 
