@@ -52,8 +52,11 @@
        (all :part :snare)))
 
 (def hihat-rhythm
-  ;; Steady eighth notes - 28 notes for 4 bars of 7/8
-  (repeat 28 1/2))
+  ;; Mostly eighth notes with 16th note hits on beat 7 of each bar
+  [1/2 1/2 1/2 1/2 1/2 1/2 1/4 1/4   ; bar 1 (7 eighth notes = 3.5 beats)
+   1/2 1/2 1/2 1/2 1/2 1/2 1/4 1/4   ; bar 2
+   1/2 1/2 1/2 1/2 1/2 1/2 1/4 1/4   ; bar 3
+   1/2 1/2 1/2 1/2 1/2 1/2 1/4 1/4]) ; bar 4
 
 (def hihat-pattern
   (->> (phrase hihat-rhythm (repeat 0))
@@ -122,9 +125,7 @@
 
 (defmethod live/play-note :chords
   [{midi :pitch seconds :duration}]
-  ;; Suppressed temporarily
-  nil
-  #_(let [freq (midi->hz midi)]
+  (let [freq (midi->hz midi)]
     (organ freq seconds :volume 0.2)))
 
 (defmethod live/play-note :kick
