@@ -44,8 +44,8 @@
        (all :part :kick)))
 
 (def snare-rhythm
-  ;; Backbeat on beat 4 of each bar
-  [3/2 2 3/2 2 3/2 2 3/2 2])
+  ;; 2-bar pattern repeated twice, avoiding hits on bar starts
+  [2 3 1/2 1 5/2 3 1/2 1 1/2])
 
 (def snare-pattern
   (->> (phrase snare-rhythm (repeat 0))
