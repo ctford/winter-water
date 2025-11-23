@@ -62,6 +62,15 @@
   (->> (phrase hihat-rhythm (repeat 0))
        (all :part :hihat)))
 
+(def melody-rhythm [3/2 1 3/2 1 1 3/2 1 1 3/2 1])
+
+(def melody-pitches [5 6 8 7 6 5 7 6 5 4])
+
+(def melody-line
+  (->> (phrase melody-rhythm melody-pitches)
+       (where :pitch scale/raise)
+       (all :part :melody)))
+
 (def chords
   (->> (phrase harmonic-rhythm chord-progression)
        (where :pitch scale/lower)
@@ -70,6 +79,7 @@
 (def winter-water
   (->> chords
        (with bass-line)
+       (with melody-line)
        (with kick-pattern)
        (with snare-pattern)
        (with hihat-pattern)
@@ -118,6 +128,15 @@
       (* volume)
       (* (env-gen (perc 0.001 0.08) (line:kr 1 0 dur) :action FREE))))
 
+(definst breathy-lead [freq 440 dur 1.0 volume 0.4]
+  (-> (saw freq)
+      (+ (* 0.3 (saw (* freq 1.01))))
+      (+ (* 0.2 (white-noise)))
+      (lpf (+ freq (* 800 (env-gen (perc 0.3 0.7)))))
+      (rlpf (* freq 3) 0.3)
+      (* volume)
+      (* (env-gen (adsr 0.15 0.3 0.6 0.4) (line:kr 1 0 dur) :action FREE))))
+
 (defmethod live/play-note :default
   [{midi :pitch seconds :duration}]
   (let [freq (midi->hz midi)]
@@ -139,6 +158,11 @@
 (defmethod live/play-note :hihat
   [{midi :pitch seconds :duration}]
   (hihat 8000 seconds :volume 0.25))
+
+(defmethod live/play-note :melody
+  [{midi :pitch seconds :duration}]
+  (let [freq (midi->hz midi)]
+    (breathy-lead freq seconds :volume 0.35)))
 
 (comment
  (->> winter-water var live/jam) 

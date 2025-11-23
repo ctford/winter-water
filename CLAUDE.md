@@ -81,6 +81,15 @@ After using `load-file` to reload code, the nREPL session retains all context. Y
 (take 4 winter-water)
 ```
 
+### Hot-Reloading While Jamming
+You don't need to stop playback to update code. Just edit the file and reload:
+
+```clojure
+(load-file "src/winter_water/core.clj")
+```
+
+Changes take effect on the next cycle. The music keeps playing without interruption.
+
 ### Iterative Development Pattern
 When working on complex compositions, isolate parts by suppressing others:
 
