@@ -91,7 +91,7 @@ For development, experimentation, and iteration:
 - "Play just the melody line"
 - Claude can evaluate code, inspect state, and iterate
 
-Claude Code connects via the `.mcp.json` configuration and has access to:
+Claude Code connects via user-level MCP server configuration and has access to:
 - `eval-clojure` - Evaluate any Clojure expression
 - `load-file` - Reload Clojure source files
 - `set-ns` - Switch namespaces
@@ -139,6 +139,7 @@ When working on complex compositions, isolate parts by suppressing others:
 Then test in isolation, verify it works, and bring parts back one by one using `load-file`.
 
 ### Verifying Musical Durations
+
 Always check that patterns sum to the correct total duration:
 
 ```clojure
@@ -148,25 +149,25 @@ Always check that patterns sum to the correct total duration:
 
 For 7/8 time: 4 bars × 7 eighth notes = 28 eighth notes = 14 beats total. Each bar = 3.5 beats.
 
-## Recording the Track
+**Important:** The `duration` function returns different units depending on whether `tempo` has been applied:
+- **Before `tempo`**: Returns duration in abstract beats/time units
+- **After `tempo`**: Returns duration in **seconds** (actual playback time)
 
-To record the full song to a WAV file with automatic stop:
-
+For the full song:
 ```clojure
-;; Calculate actual playback time
-(def song-duration-beats (duration winter-water)) ; 145.75 beats
-(def song-duration-seconds (* song-duration-beats 0.5)) ; ~73 seconds (adjusted for tempo)
-
-;; Start recording
-(recording-start "~/Desktop/winter-water.wav")
-
-;; Play the track once (not looping)
-(->> winter-water live/play)
-
-;; Auto-stop after duration + buffer
-(future
-  (Thread/sleep (* (+ song-duration-seconds 2) 1000)) ; add 2 second buffer
-  (recording-stop))
+(duration winter-water)  ; Returns 145.75 seconds (~2 min 26 sec)
+                        ; NOT beats - tempo has already been applied!
 ```
 
-This automatically stops recording after the song finishes, so you don't need to manually trigger the stop.
+For individual sections before tempo:
+```clojure
+(duration a-section)  ; Returns 7.0 beats (before tempo scaling)
+```
+
+## Recording the Track
+
+To record the full song to a WAV file with automatic stop, see the recording code in the `(comment ...)` block at the bottom of `src/winter_water/core.clj`.
+
+The recording code calculates the song duration (which is already in seconds after `tempo` is applied), starts recording, plays the track once (not looping), and automatically stops recording after the song finishes plus a 2-second buffer.
+
+The song is approximately **2 minutes 26 seconds** long (145.75 seconds).
