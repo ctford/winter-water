@@ -40,8 +40,19 @@
 ;; Bass filter parameters
 (def bass-filter-min 100)
 (def bass-filter-range 600)
-(def bass-filter-lfo-rate 3.0)
+(def bass-filter-lfo-rate 6.0)
 (def bass-filter-resonance 0.4)
+
+;; Control bus for shared bass LFO (provides continuity across all bass notes)
+(defonce bass-lfo-bus (control-bus))
+
+;; Global LFO synth that writes to the bass bus
+(defonce bass-lfo-synth
+  (defsynth bass-lfo []
+    (out:kr bass-lfo-bus (lf-noise1:kr bass-filter-lfo-rate))))
+
+;; Start the LFO synth
+(defonce start-bass-lfo (bass-lfo))
 
 ;; Bass overdrive parameters
 (def bass-pre-gain 3.0)
@@ -447,11 +458,12 @@
 ;;; INSTRUMENTS
 ;;; ============================================================================
 
-(definst bass [freq 110 dur 1.0 res 1000 volume 1.0 pan 0]
-  (let [random-lfo (lf-noise1:kr bass-filter-lfo-rate)
-        filter-freq (+ bass-filter-min (* bass-filter-range (+ 0.5 (* 0.5 random-lfo))))
-        ;; Pan follows filter movement: lowest filter = -1, highest filter = 1
-        auto-pan random-lfo]
+(definst bass [freq 110 dur 1.0 res 1000 volume 1.0]
+  (let [;; Read shared LFO from control bus for continuity across all bass notes
+        shared-lfo (in:kr bass-lfo-bus)
+        filter-freq (+ bass-filter-min (* bass-filter-range (+ 0.5 (* 0.5 shared-lfo))))
+        ;; Pan follows same wandering LFO as filter
+        auto-pan shared-lfo]
     (-> (sin-osc freq)
         (+ (* 1/3 (sin-osc (* 2 freq))))
         (+ (* 1/2 (sin-osc (* 3 freq))))
@@ -515,26 +527,30 @@
       (pan2 pan)))
 
 (definst breathy-lead [freq 440 dur 1.0 volume 0.4 pan 0]
-  (-> (saw freq)
-      (+ (* 0.3 (saw (* freq 1.01))))
-      (+ (* 0.2 (white-noise)))
-      (lpf (+ freq (* 800 (env-gen (perc 0.001 0.3)))))
-      (rlpf (* freq 3) 0.3)
-      (* volume)
-      (* (env-gen (perc 0.001 0.5) (line:kr 1 0 dur) :action FREE))
-      (free-verb 0.6 0.8 0.5)
-      (pan2 pan)))
+  (let [;; Inverse of bass pan movement - all instances sync via sine osc
+        auto-pan (* -1 (sin-osc:kr bass-filter-lfo-rate))]
+    (-> (saw freq)
+        (+ (* 0.3 (saw (* freq 1.01))))
+        (+ (* 0.2 (white-noise)))
+        (lpf (+ freq (* 800 (env-gen (perc 0.001 0.3)))))
+        (rlpf (* freq 3) 0.3)
+        (* volume)
+        (* (env-gen (perc 0.001 0.5) (line:kr 1 0 dur) :action FREE))
+        (free-verb 0.6 0.8 0.5)
+        (pan2 auto-pan))))
 
 (definst breathy-pad [freq 440 dur 1.0 volume 0.3 pan 0]
-  (-> (saw freq)
-      (+ (* 0.3 (saw (* freq 1.01))))
-      (+ (* 0.2 (white-noise)))
-      (lpf (+ freq (* 800 (env-gen (perc 0.3 0.7)))))
-      (rlpf (* freq 3) 0.3)
-      (* volume)
-      (* (env-gen (adsr 0.15 0.3 0.6 0.4) (line:kr 1 0 dur) :action FREE))
-      (free-verb 0.6 0.8 0.5)
-      (pan2 pan)))
+  (let [;; Inverse of bass pan movement - all instances sync via sine osc
+        auto-pan (* -1 (sin-osc:kr bass-filter-lfo-rate))]
+    (-> (saw freq)
+        (+ (* 0.3 (saw (* freq 1.01))))
+        (+ (* 0.2 (white-noise)))
+        (lpf (+ freq (* 800 (env-gen (perc 0.3 0.7)))))
+        (rlpf (* freq 3) 0.3)
+        (* volume)
+        (* (env-gen (adsr 0.15 0.3 0.6 0.4) (line:kr 1 0 dur) :action FREE))
+        (free-verb 0.6 0.8 0.5)
+        (pan2 auto-pan))))
 
 (definst ambient-texture [freq 200 dur 4.0 volume 0.15 pan 0]
   (let [noise (pink-noise)
