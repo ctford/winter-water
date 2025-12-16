@@ -204,18 +204,30 @@
        (where :pitch (comp scale/F scale/major))
        (tempo (bpm 120))))
 
-;; C section - power chords with melody (no bass)
+;; C section - power chords with melody (no bass), also uses shortened intro melody
 (def c-section
   (->> b-chord-line
-       (with b-melody-line)
+       (with c-intro-melody-line)
        (with hihat-pattern)
        (where :pitch (comp scale/F scale/major))
        (tempo (bpm 120))))
 
+;; C section intro melody - just first phrase (no reply)
+(def c-intro-melody-rhythm
+  [1 1 1 1/2 3])
+
+(def c-intro-melody-pitches
+  [8 7 6 5 4])
+
+(def c-intro-melody-line
+  (->> (phrase c-intro-melody-rhythm c-intro-melody-pitches)
+       (where :pitch scale/raise)
+       (all :part :melody)))
+
 ;; C section intro - just chords and melody, no drums
 (def c-section-intro
   (->> b-chord-line
-       (with b-melody-line)
+       (with c-intro-melody-line)
        (where :pitch (comp scale/F scale/major))
        (tempo (bpm 120))))
 
@@ -317,6 +329,17 @@
   (->> (phrase bridge-snare-rhythm (repeat 0))
        (all :part :bridge-snare)))
 
+;; Tictoc pattern - alternating on half beats (like a clock)
+(def bridge-tictoc-rhythm
+  (repeat 32 1/2)) ; 16 beats = 32 half beats
+
+(def bridge-tictoc-pitches
+  (cycle [0 1])) ; alternating tick and toc
+
+(def bridge-tictoc-pattern
+  (->> (phrase bridge-tictoc-rhythm bridge-tictoc-pitches)
+       (all :part :tictoc)))
+
 (def bridge
   (->> bridge-stabs
        (with bridge-organ-stabs)
@@ -324,6 +347,7 @@
        (with bridge-melody)
        (with bridge-kick-pattern)
        (with bridge-snare-pattern)
+       (with bridge-tictoc-pattern)
        (where :pitch (comp scale/F scale/major))
        (tempo (bpm 60))))
 
@@ -344,15 +368,20 @@
 (def winter-water full-arrangement)
 
 (definst bass [freq 110 dur 1.0 res 1000 volume 1.0 pan 0]
-  (-> (sin-osc freq)
-      (+ (* 1/3 (sin-osc (* 2 freq))))
-      (+ (* 1/2 (sin-osc (* 3 freq))))
-      (+ (* 1/3 (sin-osc (* 5 freq))))
-      (* (square 2))
-      (clip2 0.6)
-      (* volume)
-      (* (env-gen (adsr 0.01 0.2 0.3 0.1) (line:kr 1 0 dur) :action FREE))
-      (pan2 pan)))
+  (let [random-lfo (lf-noise1:kr 1.0)
+        filter-freq (+ 400 (* 600 (+ 0.5 (* 0.5 random-lfo))))]
+    (-> (sin-osc freq)
+        (+ (* 1/3 (sin-osc (* 2 freq))))
+        (+ (* 1/2 (sin-osc (* 3 freq))))
+        (+ (* 1/3 (sin-osc (* 5 freq))))
+        (* (square 2))
+        (* 3.0) ; boost before clipping for heavy overdrive
+        (clip2 0.4) ; lower threshold for more aggressive clipping
+        (* 1.5) ; make up gain after clipping
+        (rlpf filter-freq 0.5) ; wobbling resonant low pass filter
+        (* volume)
+        (* (env-gen (adsr 0.01 0.2 0.3 0.1) (line:kr 1 0 dur) :action FREE))
+        (pan2 pan))))
 
 (definst organ [freq 110 dur 1.0 res 1000 volume 1.0 pan 0]
   (-> (sin-osc freq)
@@ -379,14 +408,20 @@
         (pan2 pan))))
 
 (definst snare [freq 200 dur 0.5 volume 0.8 pan 0]
-  (-> (white-noise)
-      (+ (* 0.3 (sin-osc 180)))
-      (hpf 300)
-      (lpf 8000)
-      (* volume)
-      (* (env-gen (perc 0.001 0.15) (line:kr 1 0 dur) :action FREE))
-      (free-verb 0.3 0.5 0.3)
-      (pan2 pan)))
+  (let [pitch-env (env-gen (perc 0.001 0.05) :level-scale 80)
+        tone-freq (+ 180 pitch-env)]
+    (-> (white-noise)
+        (+ (* 0.4 (sin-osc tone-freq))) ; pitch-modulated tone
+        (+ (* 0.2 (pink-noise))) ; add pink noise for body
+        (hpf 300)
+        (bpf 2500 0.8) ; add resonant peak
+        (lpf 8000)
+        (* 1.3) ; boost
+        (clip2 0.7) ; add some grit
+        (* volume)
+        (* (env-gen (perc 0.001 0.18) (line:kr 1 0 dur) :action FREE))
+        (free-verb 0.35 0.6 0.3)
+        (pan2 pan))))
 
 (definst hihat [freq 8000 dur 0.5 volume 0.3 pan 0]
   (-> (white-noise)
@@ -441,10 +476,16 @@
       (* (env-gen (perc 0.001 0.12) (line:kr 1 0 dur) :action FREE))
       (pan2 pan)))
 
+(definst tictoc [pitch 0 dur 0.1 volume 0.4 pan 0]
+  (-> (sin-osc (+ 1200 (* pitch 400))) ; alternating high/low pitches
+      (* volume)
+      (* (env-gen (perc 0.001 0.03) (line:kr 1 0 dur) :action FREE))
+      (pan2 pan)))
+
 (defmethod live/play-note :default
   [{midi :pitch seconds :duration}]
   (let [freq (midi->hz midi)]
-    (bass freq seconds :volume 1.5 :pan 0)))
+    (bass freq seconds :volume 1.2 :pan 0)))
 
 (defmethod live/play-note :chords
   [{midi :pitch seconds :duration}]
@@ -491,7 +532,7 @@
 (defmethod live/play-note :bridge-bass
   [{midi :pitch seconds :duration}]
   (let [freq (midi->hz midi)]
-    (bass freq seconds :volume 1.2 :pan 0)))
+    (bass freq seconds :volume 1.0 :pan 0)))
 
 (defmethod live/play-note :bridge-melody
   [{midi :pitch seconds :duration}]
@@ -501,6 +542,10 @@
 (defmethod live/play-note :bridge-snare
   [{midi :pitch seconds :duration}]
   (snare 200 seconds :volume 0.5 :pan 0.1))
+
+(defmethod live/play-note :tictoc
+  [{midi :pitch seconds :duration}]
+  (tictoc midi seconds :volume 0.35 :pan -0.7))
 
 (comment
  (->> winter-water var live/jam)
