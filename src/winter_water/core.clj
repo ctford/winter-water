@@ -274,10 +274,13 @@
        (where :pitch scale/raise)
        (all :part :melody)))
 
-;; Intro - just chords and melody, no drums
+;; Intro - chords and melody, hihat comes in at bar 2 (only 3 bars of hihat total)
 (def intro
   (->> b-chord-line
        (with intro-melody-line)
+       (with (->> hihat-pattern
+                  (take-while (fn [note] (< (:time note) 10.5))) ; only first 3 bars (10.5 beats)
+                  (after 7/2))) ; delay by 1 bar, so hihat plays bars 2-4
        (where :pitch (comp scale/F scale/major))
        (tempo (bpm 120))))
 
