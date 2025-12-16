@@ -38,7 +38,7 @@
 ;;; ============================================================================
 
 ;; Bass filter parameters
-(def bass-filter-min 200)
+(def bass-filter-min 100)
 (def bass-filter-range 600)
 (def bass-filter-lfo-rate 1.5)
 (def bass-filter-resonance 0.5)
