@@ -38,9 +38,9 @@
 ;;; ============================================================================
 
 ;; Bass filter parameters
-(def bass-filter-min 400)
+(def bass-filter-min 200)
 (def bass-filter-range 600)
-(def bass-filter-lfo-rate 1.0)
+(def bass-filter-lfo-rate 1.5)
 (def bass-filter-resonance 0.5)
 
 ;; Bass overdrive parameters
@@ -249,6 +249,15 @@
        (where :pitch (comp scale/F scale/major))
        (tempo (bpm 120))))
 
+;; B section with harmony lowered by an octave
+(def b-section-harmony-low
+  (->> b-bass-line
+       (with b-melody-line)
+       (with (->> b-melody-harmony (where :pitch scale/lower)))
+       (with hihat-pattern)
+       (where :pitch (comp scale/F scale/major))
+       (tempo (bpm 120))))
+
 ;;; ============================================================================
 ;;; INTRO SECTION
 ;;; ============================================================================
@@ -404,14 +413,15 @@
        (where :pitch (comp scale/F scale/major))
        (tempo (bpm 60))))
 
-;; Full arrangement: intro (no drums), intro with drums, a (2x), b (2x), a-doubled (2x), b-harmony (2x), intro-reprise (2x), bridge (2x), double-chorus, outro -> repeat
+;; Full arrangement: intro (no drums), intro with drums, a (2x), b (2x), a-doubled (2x), b-harmony (2x, second time with lower harmonies), intro-reprise (2x), bridge (2x), double-chorus, outro -> repeat
 (def full-arrangement
   (->> intro
        (then intro-with-drums)
        (then (times 2 a-section))
        (then (times 2 b-section))
        (then (times 2 a-section-doubled))
-       (then (times 2 b-section-harmony))
+       (then b-section-harmony)
+       (then b-section-harmony-low)
        (then (times 2 intro-reprise))
        (then (times 2 bridge))
        (then double-chorus)
@@ -546,7 +556,7 @@
 (defmethod live/play-note :default
   [{midi :pitch seconds :duration}]
   (let [freq (midi->hz midi)]
-    (bass freq seconds :volume 1.2 :pan 0)))
+    (bass freq seconds :volume 0.85 :pan 0)))
 
 (defmethod live/play-note :chords
   [{midi :pitch seconds :duration}]
@@ -593,7 +603,7 @@
 (defmethod live/play-note :bridge-bass
   [{midi :pitch seconds :duration}]
   (let [freq (midi->hz midi)]
-    (bass freq seconds :volume 1.0 :pan 0)))
+    (bass freq seconds :volume 0.75 :pan 0)))
 
 (defmethod live/play-note :bridge-melody
   [{midi :pitch seconds :duration}]
