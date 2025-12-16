@@ -609,6 +609,7 @@
   (tictoc midi seconds :volume 0.35 :pan -0.7))
 
 (comment
+ ;; Playing sections
  (->> winter-water var live/jam)
  (->> intro var live/jam)
  (->> a-section var live/jam)
@@ -616,11 +617,13 @@
  (->> bridge var live/jam)
  (live/stop)
 
- ;; Recording
- (recording-start "~/Desktop/winter-water.wav")
- (->> winter-water live/play)
- ;; Wait for track to finish, then:
- (recording-stop)
+ ;; Recording with auto-stop
+ (let [song-duration-seconds (duration winter-water)] ; Already in seconds after tempo applied
+   (recording-start "~/Desktop/winter-water.wav")
+   (->> winter-water live/play)
+   (future
+     (Thread/sleep (* (+ song-duration-seconds 2) 1000)) ; Add 2 second buffer
+     (recording-stop)))
 )
 
 (defn -main
