@@ -86,6 +86,7 @@
        (where :pitch scale/lower)
        (all :part :chords)))
 
+;; Main A section - full arrangement (no texture)
 (def a-section
   (->> chords
        (with bass-line)
@@ -96,27 +97,143 @@
        (where :pitch (comp scale/F scale/major))
        (tempo (bpm 120))))
 
-;; Alternate melody for B section
-(def melody-b-rhythm
-  ;; Different rhythmic pattern, still emphasizing 7/8 feel
-  [1/2 1/2 1 1/2 1/2 1 1 1/2 1/2 1 1 1/2 1/2 1 1 1/2 1/2])
+;; Melody pad line (same as melody but sustained)
+(def melody-pad-line
+  (->> (phrase melody-rhythm melody-pitches)
+       (where :pitch scale/raise)
+       (all :part :melody-pad)))
 
-(def melody-b-pitches
-  ;; Contrasting melodic contour, exploring different scale degrees
-  [3 4 6 5 4 6 7 8 7 6 8 7 6 5 6 4 3])
+;; A section with doubled melody (plucky + sustained)
+(def a-section-doubled
+  (->> chords
+       (with bass-line)
+       (with melody-line)
+       (with melody-pad-line)
+       (with texture-pattern)
+       (with kick-pattern)
+       (with snare-pattern)
+       (with hihat-pattern)
+       (where :pitch (comp scale/F scale/major))
+       (tempo (bpm 120))))
 
-(def melody-line-b
-  (->> (phrase melody-b-rhythm melody-b-pitches)
+;; Texture that builds over time - multiple layers with increasing volume
+(def texture-build
+  (->> (phrase [7 7 7 7] [0 0 0 0]) ; 4 layers across the double-chorus
+       (map-indexed (fn [idx note]
+                      (assoc note :volume (* 0.15 (+ 1 (* 0.5 idx))))))
+       (all :part :texture)))
+
+;; Double-chorus - maxed out A section after bridge (4x for double length)
+(def double-chorus
+  (->> (times 4 a-section-doubled)
+       (with texture-build)))
+
+;; Outro - just whooshing texture for one bar
+(def outro
+  (->> (phrase [7/2] [0])
+       (all :part :texture)
+       (where :pitch (comp scale/F scale/major))
+       (tempo (bpm 120))))
+
+;; B section - sparse, contrasting arrangement
+(def b-bass-rhythm
+  ;; Sparser bass hits
+  [7/2 7/2 7/2 7/2])
+
+(def b-bass-pitches
+  [3 4 2 5])
+
+(def b-bass-line
+  (->> (phrase b-bass-rhythm b-bass-pitches)
+       (where :pitch (comp scale/lower scale/lower scale/lower))))
+
+;; Power chords for b-section (root and fifth only)
+(def b-power-chords-rhythm
+  [7/2 7/2 7/2 7/2])
+
+(def b-power-chords
+  [[[0 3] [0 4]]  ; F power chord (root on 3rd degree, fifth)
+   [[0 4] [0 5]]  ; G power chord (root on 4th degree, fifth)
+   [[0 2] [0 3]]  ; D power chord (root on 2nd degree, fifth)
+   [[0 5] [0 6]]]) ; C power chord (root on 5th degree, fifth)
+
+(def b-chord-line
+  (->> (phrase b-power-chords-rhythm b-power-chords)
+       (where :pitch scale/lower)
+       (all :part :chords)))
+
+(def b-melody-rhythm
+  ;; More space between phrases
+  [1 1 1 1/2 3 1/2 1 1 1 1/2 3 1/2])
+
+(def b-melody-pitches
+  ;; Simpler, more melodic line
+  [8 7 6 5 4 3 6 5 4 3 2 1])
+
+(def b-melody-line
+  (->> (phrase b-melody-rhythm b-melody-pitches)
        (where :pitch scale/raise)
        (all :part :melody)))
 
 (def b-section
-  (->> chords
-       (with bass-line)
-       (with melody-line-b)
-       (with texture-pattern)
-       (with kick-pattern)
-       (with snare-pattern)
+  (->> b-bass-line
+       (with b-melody-line)
+       (with hihat-pattern)
+       (where :pitch (comp scale/F scale/major))
+       (tempo (bpm 120))))
+
+;; B melody harmony - delayed by 1 bar (7/2 beats in 7/8 time) in sixths
+;; Trimmed to fit within the section duration
+(def b-melody-sixths
+  ;; Create chord pairs: original note + third below (2 scale degrees)
+  (map (fn [p] [p (- p 2)]) b-melody-pitches))
+
+(def b-melody-harmony
+  (->> (phrase b-melody-rhythm b-melody-sixths)
+       (take-while (fn [note] (< (:time note) (- 14 7/2)))) ; only notes that fit before section ends
+       (after 7/2) ; delay by 1 bar (3.5 beats)
+       (where :pitch scale/raise)
+       (all :part :melody-pad)))
+
+;; B section with harmony
+(def b-section-harmony
+  (->> b-bass-line
+       (with b-melody-line)
+       (with b-melody-harmony)
+       (with hihat-pattern)
+       (where :pitch (comp scale/F scale/major))
+       (tempo (bpm 120))))
+
+;; C section - power chords with melody (no bass)
+(def c-section
+  (->> b-chord-line
+       (with b-melody-line)
+       (with hihat-pattern)
+       (where :pitch (comp scale/F scale/major))
+       (tempo (bpm 120))))
+
+;; C section intro - just chords and melody, no drums
+(def c-section-intro
+  (->> b-chord-line
+       (with b-melody-line)
+       (where :pitch (comp scale/F scale/major))
+       (tempo (bpm 120))))
+
+;; C section reprise - with alternating Bb/C bass (continuous cycling)
+(def c-reprise-bass-rhythm
+  [7/2 7/2 7/2 7/2]) ; one bar each, fills all 4 bars
+
+(def c-reprise-bass-pitches
+  [4 5 4 5]) ; Bb, C, Bb, C - continuous cycle
+
+(def c-reprise-bass-line
+  (->> (phrase c-reprise-bass-rhythm c-reprise-bass-pitches)
+       (where :pitch (comp scale/lower scale/lower scale/lower))))
+
+(def c-section-reprise
+  (->> b-chord-line
+       (with c-reprise-bass-line)
+       (with b-melody-line)
        (with hihat-pattern)
        (where :pitch (comp scale/F scale/major))
        (tempo (bpm 120))))
@@ -143,7 +260,7 @@
 (def bridge-stabs-pitches
   ;; Voicing for reggae stabs (5th and 3rd of each chord)
   [5 3 5 3   ; F chord (C, A)
-   5 3 5 3   ; C chord (G, E)
+   5 3 2 3   ; C chord (G, E) - 7th note goes down
    4 2 4 2   ; Bb chord (F, D)
    4 2 4 2]) ; Bb chord (F, D)
 
@@ -151,6 +268,13 @@
   (->> (phrase bridge-stabs-rhythm bridge-stabs-pitches)
        (where :pitch scale/raise)
        (all :part :bridge-stabs)))
+
+;; Organ stabs for bridge (same rhythm as synth stabs, higher octave)
+(def bridge-organ-stabs
+  (->> (phrase bridge-stabs-rhythm bridge-stabs-pitches)
+       (where :pitch scale/raise)
+       (where :pitch scale/raise) ; raise twice for higher octave
+       (all :part :bridge-organ-stabs)))
 
 (def bridge-bass-rhythm
   ;; Simple bass on 1 and 3 of each bar (one drop feel)
@@ -195,6 +319,7 @@
 
 (def bridge
   (->> bridge-stabs
+       (with bridge-organ-stabs)
        (with bridge-bass-line)
        (with bridge-melody)
        (with bridge-kick-pattern)
@@ -202,18 +327,23 @@
        (where :pitch (comp scale/F scale/major))
        (tempo (bpm 60))))
 
-;; Full arrangement: b, a, b, a, bridge (2x) -> repeat
+;; Full arrangement: c intro (no drums), c (1x with drums), a (2x), b (2x), a-doubled (2x), b-harmony (2x), c-reprise (2x), bridge (2x), double-chorus, outro -> repeat
 (def full-arrangement
-  (->> b-section
-       (then a-section)
-       (then b-section)
-       (then a-section)
-       (then (times 2 bridge))))
+  (->> c-section-intro
+       (then c-section)
+       (then (times 2 a-section))
+       (then (times 2 b-section))
+       (then (times 2 a-section-doubled))
+       (then (times 2 b-section-harmony))
+       (then (times 2 c-section-reprise))
+       (then (times 2 bridge))
+       (then double-chorus)
+       (then outro)))
 
 ;; Main song var - update this to change what's playing
 (def winter-water full-arrangement)
 
-(definst bass [freq 110 dur 1.0 res 1000 volume 1.0]
+(definst bass [freq 110 dur 1.0 res 1000 volume 1.0 pan 0]
   (-> (sin-osc freq)
       (+ (* 1/3 (sin-osc (* 2 freq))))
       (+ (* 1/2 (sin-osc (* 3 freq))))
@@ -221,9 +351,10 @@
       (* (square 2))
       (clip2 0.6)
       (* volume)
-      (* (env-gen (adsr 0.01 0.2 0.3 0.1) (line:kr 1 0 dur) :action FREE))))
+      (* (env-gen (adsr 0.01 0.2 0.3 0.1) (line:kr 1 0 dur) :action FREE))
+      (pan2 pan)))
 
-(definst organ [freq 110 dur 1.0 res 1000 volume 1.0]
+(definst organ [freq 110 dur 1.0 res 1000 volume 1.0 pan 0]
   (-> (sin-osc freq)
       (+ (* 1/3 (sin-osc (* 2 freq))))
       (+ (* 1/2 (sin-osc (* 4 freq))))
@@ -231,40 +362,64 @@
       (clip2 (line:kr 0.6 0.1 3.5))
       (rlpf (line:kr 2000 100 3.5) 0.8)
       (* volume)
-      (* (env-gen (adsr 0.04 0.1 0.5 0.1) (line:kr 1 0 dur) :action FREE))))
+      (* (env-gen (adsr 0.04 0.1 0.5 0.1) (line:kr 1 0 dur) :action FREE))
+      (free-verb 0.4 0.7 0.5)
+      (pan2 pan)))
 
-(definst kick [freq 60 dur 0.5 volume 1.0]
-  (-> (sin-osc (line:kr freq 40 0.1))
-      (+ (* 0.5 (white-noise)))
-      (lpf 200)
-      (* volume)
-      (* (env-gen (perc 0.001 0.3) (line:kr 1 0 dur) :action FREE))))
+(definst kick [freq 60 dur 0.5 volume 1.0 pan 0]
+  (let [dry-sig (-> (sin-osc (line:kr freq 40 0.1))
+                    (+ (* 0.5 (white-noise)))
+                    (lpf 200)
+                    (* volume)
+                    (* (env-gen (perc 0.001 0.3) (line:kr 1 0 dur) :action FREE)))
+        verb-sig (-> dry-sig
+                     (hpf 100) ; high-pass before reverb to keep low end tight
+                     (free-verb 0.4 0.9 0.3))]
+    (-> (+ (* 0.7 dry-sig) (* 0.3 verb-sig))
+        (pan2 pan))))
 
-(definst snare [freq 200 dur 0.5 volume 0.8]
+(definst snare [freq 200 dur 0.5 volume 0.8 pan 0]
   (-> (white-noise)
       (+ (* 0.3 (sin-osc 180)))
       (hpf 300)
       (lpf 8000)
       (* volume)
-      (* (env-gen (perc 0.001 0.15) (line:kr 1 0 dur) :action FREE))))
+      (* (env-gen (perc 0.001 0.15) (line:kr 1 0 dur) :action FREE))
+      (free-verb 0.3 0.5 0.3)
+      (pan2 pan)))
 
-(definst hihat [freq 8000 dur 0.5 volume 0.3]
+(definst hihat [freq 8000 dur 0.5 volume 0.3 pan 0]
   (-> (white-noise)
       (hpf 6000)
       (lpf 12000)
       (* volume)
-      (* (env-gen (perc 0.001 0.08) (line:kr 1 0 dur) :action FREE))))
+      (* (env-gen (perc 0.001 0.08) (line:kr 1 0 dur) :action FREE))
+      (free-verb 0.2 0.4 0.2)
+      (pan2 pan)))
 
-(definst breathy-lead [freq 440 dur 1.0 volume 0.4]
+(definst breathy-lead [freq 440 dur 1.0 volume 0.4 pan 0]
+  (-> (saw freq)
+      (+ (* 0.3 (saw (* freq 1.01))))
+      (+ (* 0.2 (white-noise)))
+      (lpf (+ freq (* 800 (env-gen (perc 0.001 0.3)))))
+      (rlpf (* freq 3) 0.3)
+      (* volume)
+      (* (env-gen (perc 0.001 0.5) (line:kr 1 0 dur) :action FREE))
+      (free-verb 0.6 0.8 0.5)
+      (pan2 pan)))
+
+(definst breathy-pad [freq 440 dur 1.0 volume 0.3 pan 0]
   (-> (saw freq)
       (+ (* 0.3 (saw (* freq 1.01))))
       (+ (* 0.2 (white-noise)))
       (lpf (+ freq (* 800 (env-gen (perc 0.3 0.7)))))
       (rlpf (* freq 3) 0.3)
       (* volume)
-      (* (env-gen (adsr 0.15 0.3 0.6 0.4) (line:kr 1 0 dur) :action FREE))))
+      (* (env-gen (adsr 0.15 0.3 0.6 0.4) (line:kr 1 0 dur) :action FREE))
+      (free-verb 0.6 0.8 0.5)
+      (pan2 pan)))
 
-(definst ambient-texture [freq 200 dur 4.0 volume 0.15]
+(definst ambient-texture [freq 200 dur 4.0 volume 0.15 pan 0]
   (let [noise (pink-noise)
         random-lfo (lf-noise1:kr 0.3)
         random-lfo2 (lf-noise1:kr 0.17)
@@ -274,72 +429,92 @@
         (rlpf filter-freq resonance)
         (rlpf filter-freq resonance)
         (* volume)
-        (* (env-gen (adsr 1.5 0.5 0.7 2.0) (line:kr 1 0 dur) :action FREE)))))
+        (* (env-gen (adsr 1.5 0.5 0.7 2.0) (line:kr 1 0 dur) :action FREE))
+        (pan2 pan))))
 
-(definst reggae-stabs [freq 440 dur 0.5 volume 0.6]
+(definst reggae-stabs [freq 440 dur 0.5 volume 0.6 pan 0]
   (-> (saw freq)
       (+ (* 0.5 (saw (* freq 1.01))))
       (lpf 1200)
       (rlpf 800 0.5)
       (* volume)
-      (* (env-gen (perc 0.001 0.12) (line:kr 1 0 dur) :action FREE))))
+      (* (env-gen (perc 0.001 0.12) (line:kr 1 0 dur) :action FREE))
+      (pan2 pan)))
 
 (defmethod live/play-note :default
   [{midi :pitch seconds :duration}]
   (let [freq (midi->hz midi)]
-    (bass freq seconds :volume 1.5)))
+    (bass freq seconds :volume 1.5 :pan 0)))
 
 (defmethod live/play-note :chords
   [{midi :pitch seconds :duration}]
   (let [freq (midi->hz midi)]
-    (organ freq seconds :volume 0.2)))
+    (organ freq seconds :volume 0.2 :pan (- 0.2 (* 0.4 (rand))))))
 
 (defmethod live/play-note :kick
   [{midi :pitch seconds :duration}]
-  (kick 60 seconds :volume 1.0))
+  (kick 60 seconds :volume 1.0 :pan 0))
 
 (defmethod live/play-note :snare
   [{midi :pitch seconds :duration}]
-  (snare 200 seconds :volume 0.6))
+  (snare 200 seconds :volume 0.6 :pan 0.1))
 
 (defmethod live/play-note :hihat
   [{midi :pitch seconds :duration}]
-  (hihat 8000 seconds :volume 0.25))
+  (hihat 8000 seconds :volume 0.25 :pan 0.3))
 
 (defmethod live/play-note :melody
   [{midi :pitch seconds :duration}]
   (let [freq (midi->hz midi)]
-    (breathy-lead freq seconds :volume 0.35)))
+    (breathy-lead freq seconds :volume 0.8 :pan -0.1)))
+
+(defmethod live/play-note :melody-pad
+  [{midi :pitch seconds :duration}]
+  (let [freq (midi->hz midi)]
+    (breathy-pad freq seconds :volume 0.35 :pan 0.4)))
 
 (defmethod live/play-note :texture
-  [{midi :pitch seconds :duration}]
-  (ambient-texture 200 seconds :volume 0.18))
+  [{midi :pitch seconds :duration :as note}]
+  (let [vol (or (:volume note) 0.18)]
+    (ambient-texture 200 seconds :volume vol :pan (- 0.5 (rand)))))
 
 (defmethod live/play-note :bridge-stabs
   [{midi :pitch seconds :duration}]
   (let [freq (midi->hz midi)]
-    (reggae-stabs freq seconds :volume 0.5)))
+    (reggae-stabs freq seconds :volume 0.5 :pan (- 0.3 (* 0.6 (rand))))))
+
+(defmethod live/play-note :bridge-organ-stabs
+  [{midi :pitch seconds :duration}]
+  (let [freq (midi->hz midi)]
+    (organ freq seconds :volume 0.15 :pan (- 0.2 (* 0.4 (rand))))))
 
 (defmethod live/play-note :bridge-bass
   [{midi :pitch seconds :duration}]
   (let [freq (midi->hz midi)]
-    (bass freq seconds :volume 1.2)))
+    (bass freq seconds :volume 1.2 :pan 0)))
 
 (defmethod live/play-note :bridge-melody
   [{midi :pitch seconds :duration}]
   (let [freq (midi->hz midi)]
-    (breathy-lead freq seconds :volume 0.4)))
+    (breathy-lead freq seconds :volume 0.8 :pan 0)))
 
 (defmethod live/play-note :bridge-snare
   [{midi :pitch seconds :duration}]
-  (snare 200 seconds :volume 0.5))
+  (snare 200 seconds :volume 0.5 :pan 0.1))
 
 (comment
  (->> winter-water var live/jam)
+ (->> c-section var live/jam)
  (->> a-section var live/jam)
  (->> b-section var live/jam)
  (->> bridge var live/jam)
  (live/stop)
+
+ ;; Recording
+ (recording-start "~/Desktop/winter-water.wav")
+ (->> winter-water live/play)
+ ;; Wait for track to finish, then:
+ (recording-stop)
 )
 
 (defn -main
