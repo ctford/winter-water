@@ -40,8 +40,8 @@
 ;; Bass filter parameters
 (def bass-filter-min 100)
 (def bass-filter-range 600)
-(def bass-filter-lfo-rate 1.5)
-(def bass-filter-resonance 0.5)
+(def bass-filter-lfo-rate 3.0)
+(def bass-filter-resonance 0.4)
 
 ;; Bass overdrive parameters
 (def bass-pre-gain 3.0)
@@ -406,9 +406,7 @@
        (all :part :tictoc)))
 
 (def bridge
-  (->> bridge-stabs
-       (with bridge-organ-stabs)
-       (with bridge-bass-line)
+  (->> bridge-bass-line
        (with bridge-melody)
        (with bridge-kick-pattern)
        (with bridge-snare-pattern)
@@ -416,7 +414,18 @@
        (where :pitch (comp scale/F scale/major))
        (tempo (bpm 60))))
 
-;; Full arrangement: intro (no drums), intro with drums, a (2x), b (2x), a-doubled (2x), b-harmony (2x, second time with lower harmonies), intro-reprise (2x), bridge (2x), double-chorus, outro -> repeat
+(def bridge-with-stabs
+  (->> bridge-bass-line
+       (with bridge-stabs)
+       (with bridge-organ-stabs)
+       (with bridge-melody)
+       (with bridge-kick-pattern)
+       (with bridge-snare-pattern)
+       (with bridge-tictoc-pattern)
+       (where :pitch (comp scale/F scale/major))
+       (tempo (bpm 60))))
+
+;; Full arrangement: intro (no drums), intro with drums, a (2x), b (2x), a-doubled (2x), b-harmony (2x, second time with lower harmonies), intro-reprise (2x), bridge, bridge-with-stabs, double-chorus, outro -> repeat
 (def full-arrangement
   (->> intro
        (then intro-with-drums)
@@ -426,7 +435,8 @@
        (then b-section-harmony)
        (then b-section-harmony-low)
        (then (times 2 intro-reprise))
-       (then (times 2 bridge))
+       (then bridge)
+       (then bridge-with-stabs)
        (then double-chorus)
        (then outro)))
 
@@ -439,7 +449,9 @@
 
 (definst bass [freq 110 dur 1.0 res 1000 volume 1.0 pan 0]
   (let [random-lfo (lf-noise1:kr bass-filter-lfo-rate)
-        filter-freq (+ bass-filter-min (* bass-filter-range (+ 0.5 (* 0.5 random-lfo))))]
+        filter-freq (+ bass-filter-min (* bass-filter-range (+ 0.5 (* 0.5 random-lfo))))
+        ;; Pan follows filter movement: lowest filter = -1, highest filter = 1
+        auto-pan random-lfo]
     (-> (sin-osc freq)
         (+ (* 1/3 (sin-osc (* 2 freq))))
         (+ (* 1/2 (sin-osc (* 3 freq))))
@@ -451,7 +463,7 @@
         (rlpf filter-freq bass-filter-resonance) ; wobbling resonant low pass filter
         (* volume)
         (* (env-gen (adsr 0.01 0.2 0.3 0.1) (line:kr 1 0 dur) :action FREE))
-        (pan2 pan))))
+        (pan2 auto-pan))))
 
 (definst organ [freq 110 dur 1.0 res 1000 volume 1.0 pan 0]
   (-> (sin-osc freq)
@@ -543,7 +555,7 @@
       (lpf 1200)
       (rlpf 800 0.5)
       (* volume)
-      (* (env-gen (perc 0.001 0.12) (line:kr 1 0 dur) :action FREE))
+      (* (env-gen (perc 0.001 0.25) (line:kr 1 0 dur) :action FREE))
       (pan2 pan)))
 
 (definst tictoc [pitch 0 dur 0.1 volume 0.4 pan 0]
@@ -596,7 +608,7 @@
 (defmethod live/play-note :bridge-stabs
   [{midi :pitch seconds :duration}]
   (let [freq (midi->hz midi)]
-    (reggae-stabs freq seconds :volume 0.5 :pan (- 0.3 (* 0.6 (rand))))))
+    (reggae-stabs freq seconds :volume 0.8 :pan (- 0.3 (* 0.6 (rand))))))
 
 (defmethod live/play-note :bridge-organ-stabs
   [{midi :pitch seconds :duration}]
