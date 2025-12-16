@@ -1,5 +1,5 @@
 (ns winter-water.core
-  (:require 
+  (:require
     [overtone.core :refer :all :exclude [stop sharp flat]]
     [leipzig.melody :refer :all]
     [leipzig.scale :as scale]
@@ -8,8 +8,49 @@
     [leipzig.temperament :as temperament]
     [overtone.inst.synth :as synth]))
 
+;;; ============================================================================
+;;; WINTER WATER - A progressive electronic composition in F major
+;;; ============================================================================
+;;;
+;;; Time signature: Mainly 7/8 (2+2+3 grouping), Bridge in 4/4
+;;; Key: F major
+;;; Tempo: 120 BPM (main), 60 BPM (bridge - halftime)
+;;; Duration: ~2 minutes
+;;;
+;;; SONG STRUCTURE:
+;;; - Intro (no drums) → Intro (with hihat)
+;;; - A × 2 → B × 2 → A-doubled × 2 → B-harmony × 2
+;;; - Intro-reprise × 2 (with bass) → Bridge × 2 (reggae 4/4)
+;;; - Double-chorus × 4 → Outro (texture only)
+;;;
+;;; CHORD PROGRESSIONS:
+;;; Intro: Bbsus2 → Dm7 → Bbmaj7 → Dm9 (power chord voicings)
+;;; Main: Various triads in 7/8 time
+;;; Bridge: F → C → Bb → Bb (reggae stabs on offbeats)
+;;;
+;;; ============================================================================
+
 (when-not (server-connected?)
   (connect-server "127.0.0.1" 57110))
+
+;;; ============================================================================
+;;; CONSTANTS
+;;; ============================================================================
+
+;; Bass filter parameters
+(def bass-filter-min 400)
+(def bass-filter-range 600)
+(def bass-filter-lfo-rate 1.0)
+(def bass-filter-resonance 0.5)
+
+;; Bass overdrive parameters
+(def bass-pre-gain 3.0)
+(def bass-clip-threshold 0.4)
+(def bass-post-gain 1.5)
+
+;;; ============================================================================
+;;; SHARED MELODIC & HARMONIC MATERIAL
+;;; ============================================================================
 
 (def chord-progression
   [(-> chord/triad (chord/root 3) (chord/inversion 2))
@@ -85,6 +126,10 @@
   (->> (phrase harmonic-rhythm chord-progression)
        (where :pitch scale/lower)
        (all :part :chords)))
+
+;;; ============================================================================
+;;; MAIN SECTIONS (A & B)
+;;; ============================================================================
 
 ;; Main A section - full arrangement (no texture)
 (def a-section
@@ -204,51 +249,59 @@
        (where :pitch (comp scale/F scale/major))
        (tempo (bpm 120))))
 
-;; C section - power chords with melody (no bass), also uses shortened intro melody
-(def c-section
+;;; ============================================================================
+;;; INTRO SECTION
+;;; ============================================================================
+
+;; Intro melody - just first phrase (no reply)
+(def intro-melody-rhythm
+  [1 1 1 1/2 3])
+
+(def intro-melody-pitches
+  [8 7 6 5 4])
+
+(def intro-melody-line
+  (->> (phrase intro-melody-rhythm intro-melody-pitches)
+       (where :pitch scale/raise)
+       (all :part :melody)))
+
+;; Intro - just chords and melody, no drums
+(def intro
   (->> b-chord-line
-       (with c-intro-melody-line)
+       (with intro-melody-line)
+       (where :pitch (comp scale/F scale/major))
+       (tempo (bpm 120))))
+
+;; Intro with drums
+(def intro-with-drums
+  (->> b-chord-line
+       (with intro-melody-line)
        (with hihat-pattern)
        (where :pitch (comp scale/F scale/major))
        (tempo (bpm 120))))
 
-;; C section intro melody - just first phrase (no reply)
-(def c-intro-melody-rhythm
-  [1 1 1 1/2 3])
-
-(def c-intro-melody-pitches
-  [8 7 6 5 4])
-
-(def c-intro-melody-line
-  (->> (phrase c-intro-melody-rhythm c-intro-melody-pitches)
-       (where :pitch scale/raise)
-       (all :part :melody)))
-
-;; C section intro - just chords and melody, no drums
-(def c-section-intro
-  (->> b-chord-line
-       (with c-intro-melody-line)
-       (where :pitch (comp scale/F scale/major))
-       (tempo (bpm 120))))
-
-;; C section reprise - with alternating Bb/C bass (continuous cycling)
-(def c-reprise-bass-rhythm
+;; Intro reprise - with alternating Bb/C bass (continuous cycling)
+(def intro-reprise-bass-rhythm
   [7/2 7/2 7/2 7/2]) ; one bar each, fills all 4 bars
 
-(def c-reprise-bass-pitches
+(def intro-reprise-bass-pitches
   [4 5 4 5]) ; Bb, C, Bb, C - continuous cycle
 
-(def c-reprise-bass-line
-  (->> (phrase c-reprise-bass-rhythm c-reprise-bass-pitches)
+(def intro-reprise-bass-line
+  (->> (phrase intro-reprise-bass-rhythm intro-reprise-bass-pitches)
        (where :pitch (comp scale/lower scale/lower scale/lower))))
 
-(def c-section-reprise
+(def intro-reprise
   (->> b-chord-line
-       (with c-reprise-bass-line)
+       (with intro-reprise-bass-line)
        (with b-melody-line)
        (with hihat-pattern)
        (where :pitch (comp scale/F scale/major))
        (tempo (bpm 120))))
+
+;;; ============================================================================
+;;; BRIDGE SECTION (Reggae 4/4 at 60 BPM)
+;;; ============================================================================
 
 ;; Bridge section - halftime, 4/4, reggae feel
 (def bridge-chord-progression
@@ -351,15 +404,15 @@
        (where :pitch (comp scale/F scale/major))
        (tempo (bpm 60))))
 
-;; Full arrangement: c intro (no drums), c (1x with drums), a (2x), b (2x), a-doubled (2x), b-harmony (2x), c-reprise (2x), bridge (2x), double-chorus, outro -> repeat
+;; Full arrangement: intro (no drums), intro with drums, a (2x), b (2x), a-doubled (2x), b-harmony (2x), intro-reprise (2x), bridge (2x), double-chorus, outro -> repeat
 (def full-arrangement
-  (->> c-section-intro
-       (then c-section)
+  (->> intro
+       (then intro-with-drums)
        (then (times 2 a-section))
        (then (times 2 b-section))
        (then (times 2 a-section-doubled))
        (then (times 2 b-section-harmony))
-       (then (times 2 c-section-reprise))
+       (then (times 2 intro-reprise))
        (then (times 2 bridge))
        (then double-chorus)
        (then outro)))
@@ -367,18 +420,22 @@
 ;; Main song var - update this to change what's playing
 (def winter-water full-arrangement)
 
+;;; ============================================================================
+;;; INSTRUMENTS
+;;; ============================================================================
+
 (definst bass [freq 110 dur 1.0 res 1000 volume 1.0 pan 0]
-  (let [random-lfo (lf-noise1:kr 1.0)
-        filter-freq (+ 400 (* 600 (+ 0.5 (* 0.5 random-lfo))))]
+  (let [random-lfo (lf-noise1:kr bass-filter-lfo-rate)
+        filter-freq (+ bass-filter-min (* bass-filter-range (+ 0.5 (* 0.5 random-lfo))))]
     (-> (sin-osc freq)
         (+ (* 1/3 (sin-osc (* 2 freq))))
         (+ (* 1/2 (sin-osc (* 3 freq))))
         (+ (* 1/3 (sin-osc (* 5 freq))))
         (* (square 2))
-        (* 3.0) ; boost before clipping for heavy overdrive
-        (clip2 0.4) ; lower threshold for more aggressive clipping
-        (* 1.5) ; make up gain after clipping
-        (rlpf filter-freq 0.5) ; wobbling resonant low pass filter
+        (* bass-pre-gain) ; boost before clipping for heavy overdrive
+        (clip2 bass-clip-threshold) ; aggressive clipping threshold
+        (* bass-post-gain) ; make up gain after clipping
+        (rlpf filter-freq bass-filter-resonance) ; wobbling resonant low pass filter
         (* volume)
         (* (env-gen (adsr 0.01 0.2 0.3 0.1) (line:kr 1 0 dur) :action FREE))
         (pan2 pan))))
@@ -482,6 +539,10 @@
       (* (env-gen (perc 0.001 0.03) (line:kr 1 0 dur) :action FREE))
       (pan2 pan)))
 
+;;; ============================================================================
+;;; PLAY METHODS (Instrument routing & mixing)
+;;; ============================================================================
+
 (defmethod live/play-note :default
   [{midi :pitch seconds :duration}]
   (let [freq (midi->hz midi)]
@@ -549,7 +610,7 @@
 
 (comment
  (->> winter-water var live/jam)
- (->> c-section var live/jam)
+ (->> intro var live/jam)
  (->> a-section var live/jam)
  (->> b-section var live/jam)
  (->> bridge var live/jam)
