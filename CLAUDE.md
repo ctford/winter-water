@@ -1,3 +1,35 @@
+## Winter Water - Song Overview
+
+**Genre:** Progressive electronic
+**Key:** F major
+**Time Signature:** Mainly 7/8 (2+2+3 grouping), Bridge in 4/4
+**Tempo:** 120 BPM (main sections), 60 BPM (bridge - halftime)
+**Duration:** ~2 minutes 10 seconds (145.75 beats)
+
+### Song Structure
+
+- **Intro** (no drums) → **Intro** (with hihat)
+- **A × 2** → **B × 2** → **A-doubled × 2** → **B-harmony × 2**
+- **Intro-reprise × 2** (with bass) → **Bridge × 2** (reggae 4/4)
+- **Double-chorus × 4** → **Outro** (texture only)
+
+### Chord Progressions
+
+- **Intro:** Bbsus2 → Dm7 → Bbmaj7 → Dm9 (power chord voicings)
+- **Main sections:** Various triads in 7/8 time
+- **Bridge:** F → C → Bb → Bb (reggae stabs on offbeats)
+
+### Code Organization
+
+The code is organized with clear section dividers:
+- **Constants** - Bass filter/overdrive parameters
+- **Shared Material** - Chord progressions, rhythms, melodies
+- **Intro Section** - Opening material
+- **Main Sections** - A & B sections with variations
+- **Bridge Section** - Reggae 4/4 material
+- **Instruments** - Synth definitions
+- **Play Methods** - Instrument routing & mixing
+
 ## Architecture
 
 This project uses:
@@ -6,6 +38,8 @@ This project uses:
 - **Java 17** - Managed via jenv for compatibility
 
 The setup starts scsynth externally on port 57110, and Overtone connects to it.
+
+**Note:** The primary branch is `main` (not `master`).
 
 - Start a REPL for performance with `lein repl`.
 - To trigger the bass synth: `echo "(bass 55 2.0)" | lein repl` (frequency, duration)
@@ -113,3 +147,26 @@ Always check that patterns sum to the correct total duration:
 ```
 
 For 7/8 time: 4 bars × 7 eighth notes = 28 eighth notes = 14 beats total. Each bar = 3.5 beats.
+
+## Recording the Track
+
+To record the full song to a WAV file with automatic stop:
+
+```clojure
+;; Calculate actual playback time
+(def song-duration-beats (duration winter-water)) ; 145.75 beats
+(def song-duration-seconds (* song-duration-beats 0.5)) ; ~73 seconds (adjusted for tempo)
+
+;; Start recording
+(recording-start "~/Desktop/winter-water.wav")
+
+;; Play the track once (not looping)
+(->> winter-water live/play)
+
+;; Auto-stop after duration + buffer
+(future
+  (Thread/sleep (* (+ song-duration-seconds 2) 1000)) ; add 2 second buffer
+  (recording-stop))
+```
+
+This automatically stops recording after the song finishes, so you don't need to manually trigger the stop.
