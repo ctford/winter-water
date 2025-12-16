@@ -86,16 +86,132 @@
        (where :pitch scale/lower)
        (all :part :chords)))
 
-(def winter-water
+(def a-section
   (->> chords
        (with bass-line)
        (with melody-line)
+       (with kick-pattern)
+       (with snare-pattern)
+       (with hihat-pattern)
+       (where :pitch (comp scale/F scale/major))
+       (tempo (bpm 120))))
+
+;; Alternate melody for B section
+(def melody-b-rhythm
+  ;; Different rhythmic pattern, still emphasizing 7/8 feel
+  [1/2 1/2 1 1/2 1/2 1 1 1/2 1/2 1 1 1/2 1/2 1 1 1/2 1/2])
+
+(def melody-b-pitches
+  ;; Contrasting melodic contour, exploring different scale degrees
+  [3 4 6 5 4 6 7 8 7 6 8 7 6 5 6 4 3])
+
+(def melody-line-b
+  (->> (phrase melody-b-rhythm melody-b-pitches)
+       (where :pitch scale/raise)
+       (all :part :melody)))
+
+(def b-section
+  (->> chords
+       (with bass-line)
+       (with melody-line-b)
        (with texture-pattern)
        (with kick-pattern)
        (with snare-pattern)
        (with hihat-pattern)
        (where :pitch (comp scale/F scale/major))
        (tempo (bpm 120))))
+
+;; Bridge section - halftime, 4/4, reggae feel
+(def bridge-chord-progression
+  [(-> chord/triad (chord/root 1))   ; F
+   (-> chord/triad (chord/root 5))   ; C
+   (-> chord/triad (chord/root 4))   ; Bb
+   (-> chord/triad (chord/root 4))]) ; Bb
+
+(def bridge-harmonic-rhythm
+  ;; 4 bars of 4/4, each chord gets 1 bar (4 beats)
+  [4 4 4 4])
+
+(def bridge-stabs-rhythm
+  ;; Reggae stabs on offbeats (2 and 4 of each bar)
+  ;; Pattern: rest-stab-rest-stab for each bar
+  [1 1/2 1/2 1 1/2 1/2   ; bar 1: F
+   1 1/2 1/2 1 1/2 1/2   ; bar 2: C
+   1 1/2 1/2 1 1/2 1/2   ; bar 3: Bb
+   1 1/2 1/2 1 1/2 1/2]) ; bar 4: Bb
+
+(def bridge-stabs-pitches
+  ;; Voicing for reggae stabs (5th and 3rd of each chord)
+  [5 3 5 3   ; F chord (C, A)
+   5 3 5 3   ; C chord (G, E)
+   4 2 4 2   ; Bb chord (F, D)
+   4 2 4 2]) ; Bb chord (F, D)
+
+(def bridge-stabs
+  (->> (phrase bridge-stabs-rhythm bridge-stabs-pitches)
+       (where :pitch scale/raise)
+       (all :part :bridge-stabs)))
+
+(def bridge-bass-rhythm
+  ;; Simple bass on 1 and 3 of each bar (one drop feel)
+  [2 2 2 2 2 2 2 2])
+
+(def bridge-bass-pitches
+  ;; Root notes: F, C, Bb, Bb
+  [1 1 5 5 4 4 4 4])
+
+(def bridge-bass-line
+  (->> (phrase bridge-bass-rhythm bridge-bass-pitches)
+       (where :pitch (comp scale/lower scale/lower scale/lower))
+       (all :part :bridge-bass)))
+
+(def bridge-melody-rhythm
+  ;; Blues-inflected melody with syncopation
+  [1 1/2 1/2 1 1 1/2 1/2 1 1/2 1/2 1 1 1 1/2 1/2])
+
+(def bridge-melody-pitches
+  ;; Blues scale using fractional degrees: 1.5 = blue third, 4.5 = blue seventh
+  [1 1.5 1.5 2 1 4.5 4.5 5 4 4 1.5 1.5 5 4 1.5 1])
+
+(def bridge-melody
+  (->> (phrase bridge-melody-rhythm bridge-melody-pitches)
+       (all :part :bridge-melody)))
+
+(def bridge-kick-rhythm
+  ;; One drop: kick on 3 of each bar
+  [2 2 2 2 2 2 2 2])
+
+(def bridge-kick-pattern
+  (->> (phrase bridge-kick-rhythm (repeat 0))
+       (all :part :kick)))
+
+(def bridge-snare-rhythm
+  ;; Snare on 2 and 4
+  [1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1])
+
+(def bridge-snare-pattern
+  (->> (phrase bridge-snare-rhythm (repeat 0))
+       (all :part :bridge-snare)))
+
+(def bridge
+  (->> bridge-stabs
+       (with bridge-bass-line)
+       (with bridge-melody)
+       (with bridge-kick-pattern)
+       (with bridge-snare-pattern)
+       (where :pitch (comp scale/F scale/major))
+       (tempo (bpm 60))))
+
+;; Full arrangement: b, a, b, a, bridge (2x) -> repeat
+(def full-arrangement
+  (->> b-section
+       (then a-section)
+       (then b-section)
+       (then a-section)
+       (then (times 2 bridge))))
+
+;; Main song var - update this to change what's playing
+(def winter-water full-arrangement)
 
 (definst bass [freq 110 dur 1.0 res 1000 volume 1.0]
   (-> (sin-osc freq)
@@ -160,6 +276,14 @@
         (* volume)
         (* (env-gen (adsr 1.5 0.5 0.7 2.0) (line:kr 1 0 dur) :action FREE)))))
 
+(definst reggae-stabs [freq 440 dur 0.5 volume 0.6]
+  (-> (saw freq)
+      (+ (* 0.5 (saw (* freq 1.01))))
+      (lpf 1200)
+      (rlpf 800 0.5)
+      (* volume)
+      (* (env-gen (perc 0.001 0.12) (line:kr 1 0 dur) :action FREE))))
+
 (defmethod live/play-note :default
   [{midi :pitch seconds :duration}]
   (let [freq (midi->hz midi)]
@@ -191,9 +315,30 @@
   [{midi :pitch seconds :duration}]
   (ambient-texture 200 seconds :volume 0.18))
 
+(defmethod live/play-note :bridge-stabs
+  [{midi :pitch seconds :duration}]
+  (let [freq (midi->hz midi)]
+    (reggae-stabs freq seconds :volume 0.5)))
+
+(defmethod live/play-note :bridge-bass
+  [{midi :pitch seconds :duration}]
+  (let [freq (midi->hz midi)]
+    (bass freq seconds :volume 1.2)))
+
+(defmethod live/play-note :bridge-melody
+  [{midi :pitch seconds :duration}]
+  (let [freq (midi->hz midi)]
+    (breathy-lead freq seconds :volume 0.4)))
+
+(defmethod live/play-note :bridge-snare
+  [{midi :pitch seconds :duration}]
+  (snare 200 seconds :volume 0.5))
+
 (comment
- (->> winter-water var live/jam) 
- (->> winter-water live/play) 
+ (->> winter-water var live/jam)
+ (->> a-section var live/jam)
+ (->> b-section var live/jam)
+ (->> bridge var live/jam)
  (live/stop)
 )
 
