@@ -24,9 +24,9 @@
 ;;; - Double-chorus × 4 → Outro (texture only)
 ;;;
 ;;; CHORD PROGRESSIONS:
-;;; Intro: Bbsus2 → Dm7 → Bbmaj7 → Dm9 (power chord voicings)
+;;; Intro: IVsus2 → vi7 → IVmaj7 → vi9 (power chord voicings)
 ;;; Main: Various triads in 7/8 time
-;;; Bridge: F → C → Bb → Bb (reggae stabs on offbeats)
+;;; Bridge: ii → vi → V → V (reggae stabs on offbeats)
 ;;;
 ;;; ============================================================================
 
@@ -208,10 +208,10 @@
   [7/2 7/2 7/2 7/2])
 
 (def b-power-chords
-  [[[0 3] [0 4]]  ; F power chord (root on 3rd degree, fifth)
-   [[0 4] [0 5]]  ; G power chord (root on 4th degree, fifth)
-   [[0 2] [0 3]]  ; D power chord (root on 2nd degree, fifth)
-   [[0 5] [0 6]]]) ; C power chord (root on 5th degree, fifth)
+  [[[0 3] [0 4]]  ; I power chords (Isus4 and I5)
+   [[0 4] [0 5]]  ; I power chords (I5 and I with added vi)
+   [[0 2] [0 3]]  ; I power chords (I with iii and IV)
+   [[0 5] [0 6]]]) ; I power chords (I with vi and vii°)
 
 (def b-chord-line
   (->> (phrase b-power-chords-rhythm b-power-chords)
@@ -303,12 +303,12 @@
        (where :pitch (comp scale/F scale/major))
        (tempo (bpm 120))))
 
-;; Intro reprise - with alternating Bb/C bass (continuous cycling)
+;; Intro reprise - with alternating IV/V bass (continuous cycling)
 (def intro-reprise-bass-rhythm
   [7/2 7/2 7/2 7/2]) ; one bar each, fills all 4 bars
 
 (def intro-reprise-bass-pitches
-  [4 5 4 5]) ; Bb, C, Bb, C - continuous cycle
+  [4 5 4 5]) ; V, vi, V, vi - continuous cycle
 
 (def intro-reprise-bass-line
   (->> (phrase intro-reprise-bass-rhythm intro-reprise-bass-pitches)
@@ -328,10 +328,10 @@
 
 ;; Bridge section - halftime, 4/4, reggae feel
 (def bridge-chord-progression
-  [(-> chord/triad (chord/root 1))   ; F
-   (-> chord/triad (chord/root 5))   ; C
-   (-> chord/triad (chord/root 4))   ; Bb
-   (-> chord/triad (chord/root 4))]) ; Bb
+  [(-> chord/triad (chord/root 1))   ; ii
+   (-> chord/triad (chord/root 5))   ; vi
+   (-> chord/triad (chord/root 4))   ; V
+   (-> chord/triad (chord/root 4))]) ; V
 
 (def bridge-harmonic-rhythm
   ;; 4 bars of 4/4, each chord gets 1 bar (4 beats)
@@ -340,17 +340,17 @@
 (def bridge-stabs-rhythm
   ;; Reggae stabs on offbeats (2 and 4 of each bar)
   ;; Pattern: rest-stab-rest-stab for each bar
-  [1 1/2 1/2 1 1/2 1/2   ; bar 1: F
-   1 1/2 1/2 1 1/2 1/2   ; bar 2: C
-   1 1/2 1/2 1 1/2 1/2   ; bar 3: Bb
-   1 1/2 1/2 1 1/2 1/2]) ; bar 4: Bb
+  [1 1/2 1/2 1 1/2 1/2   ; bar 1: ii
+   1 1/2 1/2 1 1/2 1/2   ; bar 2: vi
+   1 1/2 1/2 1 1/2 1/2   ; bar 3: V
+   1 1/2 1/2 1 1/2 1/2]) ; bar 4: V
 
 (def bridge-stabs-pitches
   ;; Voicing for reggae stabs (5th and 3rd of each chord)
-  [5 3 5 3   ; F chord (C, A)
-   5 3 2 3   ; C chord (G, E) - 7th note goes down
-   4 2 4 2   ; Bb chord (F, D)
-   4 2 4 2]) ; Bb chord (F, D)
+  [5 3 5 3   ; ii chord (vi and IV degrees)
+   5 3 2 3   ; vi chord (vi, IV, iii, IV degrees) - 7th note goes down
+   4 2 4 2   ; V chord (V and iii degrees)
+   4 2 4 2]) ; V chord (V and iii degrees)
 
 (def bridge-stabs
   (->> (phrase bridge-stabs-rhythm bridge-stabs-pitches)
@@ -369,7 +369,7 @@
   [2 2 2 2 2 2 2 2])
 
 (def bridge-bass-pitches
-  ;; Root notes: F, C, Bb, Bb
+  ;; Root notes: ii, ii, vi, vi, V, V, V, V
   [1 1 5 5 4 4 4 4])
 
 (def bridge-bass-line
