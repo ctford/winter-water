@@ -98,6 +98,8 @@ Claude Code connects via user-level MCP server configuration and has access to:
 - `set-ns` - Switch namespaces
 - `apropos` - Search for symbols
 
+**Note for Claude:** Use the MCP nREPL tools directly (e.g., `eval-clojure "(live/stop)"`) instead of calling shell scripts. The shell scripts are for human performance control.
+
 ### Best of Both Worlds
 
 - **Shell scripts** for muscle memory and instant control during performance
