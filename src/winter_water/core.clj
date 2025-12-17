@@ -20,13 +20,13 @@
 ;;; SONG STRUCTURE:
 ;;; - Intro (no drums) → Intro (with hihat)
 ;;; - A × 2 → B × 2 → A-doubled × 2 → B-harmony × 2
-;;; - Intro-reprise × 2 (with bass) → Bridge × 2 (reggae 4/4)
+;;; - Intro-reprise × 2 (with bass) → Bridge × 2 (4/4 halftime)
 ;;; - Double-chorus × 4 → Outro (texture only)
 ;;;
 ;;; CHORD PROGRESSIONS:
 ;;; Intro: IVsus2 → vi7 → IVmaj7 → vi9 (power chord voicings)
 ;;; Main: Various triads in 7/8 time
-;;; Bridge: ii → vi → V → V (reggae stabs on offbeats)
+;;; Bridge: ii → vi → V → V (stabs on offbeats)
 ;;;
 ;;; ============================================================================
 
@@ -138,6 +138,90 @@
        (where :pitch scale/lower)
        (all :part :chords)))
 
+;; Power chords for b-section and intro
+;; Each chord is two dyads played together, lowered one octave
+;; Progression: IVsus2/I → vi7/I → IVmaj7/I → vi9/I
+;; All chords share I (root) as bass pedal tone
+(def b-power-chords-rhythm
+  [7/2 7/2 7/2 7/2])
+
+(def b-power-chords
+  [[[0 3] [0 4]]  ; [I IV] + [I V] = IVsus2/I
+   [[0 4] [0 5]]  ; [I V] + [I vi] = vi7/I
+   [[0 2] [0 3]]  ; [I iii] + [I IV] = IVmaj7/I
+   [[0 5] [0 6]]]) ; [I vi] + [I vii°] = vi9/I
+
+(def b-chord-line
+  (->> (phrase b-power-chords-rhythm b-power-chords)
+       (where :pitch scale/lower)
+       (all :part :chords)))
+
+(def b-melody-rhythm
+  ;; More space between phrases
+  [1 1 1 1/2 3 1/2 1 1 1 1/2 3 1/2])
+
+(def b-melody-pitches
+  ;; Simpler, more melodic line
+  [8 7 6 5 4 3 6 5 4 3 2 1])
+
+(def b-melody-line
+  (->> (phrase b-melody-rhythm b-melody-pitches)
+       (where :pitch scale/raise)
+       (all :part :melody)))
+
+;;; ============================================================================
+;;; INTRO SECTION
+;;; ============================================================================
+
+;; Intro melody - just first phrase (no reply)
+(def intro-melody-rhythm
+  [1 1 1 1/2 3])
+
+(def intro-melody-pitches
+  [8 7 6 5 4])
+
+(def intro-melody-line
+  (->> (phrase intro-melody-rhythm intro-melody-pitches)
+       (where :pitch scale/raise)
+       (all :part :melody)))
+
+;; Intro - chords and melody, hihat comes in at bar 2 (only 3 bars of hihat total)
+(def intro
+  (->> b-chord-line
+       (with intro-melody-line)
+       (with (->> hihat-pattern
+                  (take-while (fn [note] (< (:time note) 10.5))) ; only first 3 bars (10.5 beats)
+                  (after 7/2))) ; delay by 1 bar, so hihat plays bars 2-4
+       (where :pitch (comp scale/F scale/major))
+       (tempo (bpm 120))))
+
+;; Intro with drums
+(def intro-with-drums
+  (->> b-chord-line
+       (with intro-melody-line)
+       (with hihat-pattern)
+       (where :pitch (comp scale/F scale/major))
+       (tempo (bpm 120))))
+
+;; Intro reprise - with alternating IV/vi bass (continuous cycling)
+(def intro-reprise-bass-rhythm
+  [7/2 7/2 7/2 7/2]) ; one bar each, fills all 4 bars
+
+(def intro-reprise-bass-pitches
+  [3 5 3 5]) ; IV, vi, IV, vi - continuous cycle
+
+(def intro-reprise-bass-line
+  (->> (phrase intro-reprise-bass-rhythm intro-reprise-bass-pitches)
+       (where :pitch (comp scale/lower scale/lower scale/lower))))
+
+(def intro-reprise
+  (->> b-chord-line
+       (with intro-reprise-bass-line)
+       (with b-melody-line)
+       (with hihat-pattern)
+       (where :pitch (comp scale/F scale/major))
+       (tempo (bpm 120))))
+
 ;;; ============================================================================
 ;;; MAIN SECTIONS (A & B)
 ;;; ============================================================================
@@ -203,34 +287,6 @@
   (->> (phrase b-bass-rhythm b-bass-pitches)
        (where :pitch (comp scale/lower scale/lower scale/lower))))
 
-;; Power chords for b-section (root and fifth only)
-(def b-power-chords-rhythm
-  [7/2 7/2 7/2 7/2])
-
-(def b-power-chords
-  [[[0 3] [0 4]]  ; I power chords (Isus4 and I5)
-   [[0 4] [0 5]]  ; I power chords (I5 and I with added vi)
-   [[0 2] [0 3]]  ; I power chords (I with iii and IV)
-   [[0 5] [0 6]]]) ; I power chords (I with vi and vii°)
-
-(def b-chord-line
-  (->> (phrase b-power-chords-rhythm b-power-chords)
-       (where :pitch scale/lower)
-       (all :part :chords)))
-
-(def b-melody-rhythm
-  ;; More space between phrases
-  [1 1 1 1/2 3 1/2 1 1 1 1/2 3 1/2])
-
-(def b-melody-pitches
-  ;; Simpler, more melodic line
-  [8 7 6 5 4 3 6 5 4 3 2 1])
-
-(def b-melody-line
-  (->> (phrase b-melody-rhythm b-melody-pitches)
-       (where :pitch scale/raise)
-       (all :part :melody)))
-
 (def b-section
   (->> b-bass-line
        (with b-melody-line)
@@ -270,63 +326,10 @@
        (tempo (bpm 120))))
 
 ;;; ============================================================================
-;;; INTRO SECTION
+;;; BRIDGE SECTION (4/4 at 60 BPM - Halftime)
 ;;; ============================================================================
 
-;; Intro melody - just first phrase (no reply)
-(def intro-melody-rhythm
-  [1 1 1 1/2 3])
-
-(def intro-melody-pitches
-  [8 7 6 5 4])
-
-(def intro-melody-line
-  (->> (phrase intro-melody-rhythm intro-melody-pitches)
-       (where :pitch scale/raise)
-       (all :part :melody)))
-
-;; Intro - chords and melody, hihat comes in at bar 2 (only 3 bars of hihat total)
-(def intro
-  (->> b-chord-line
-       (with intro-melody-line)
-       (with (->> hihat-pattern
-                  (take-while (fn [note] (< (:time note) 10.5))) ; only first 3 bars (10.5 beats)
-                  (after 7/2))) ; delay by 1 bar, so hihat plays bars 2-4
-       (where :pitch (comp scale/F scale/major))
-       (tempo (bpm 120))))
-
-;; Intro with drums
-(def intro-with-drums
-  (->> b-chord-line
-       (with intro-melody-line)
-       (with hihat-pattern)
-       (where :pitch (comp scale/F scale/major))
-       (tempo (bpm 120))))
-
-;; Intro reprise - with alternating IV/V bass (continuous cycling)
-(def intro-reprise-bass-rhythm
-  [7/2 7/2 7/2 7/2]) ; one bar each, fills all 4 bars
-
-(def intro-reprise-bass-pitches
-  [4 5 4 5]) ; V, vi, V, vi - continuous cycle
-
-(def intro-reprise-bass-line
-  (->> (phrase intro-reprise-bass-rhythm intro-reprise-bass-pitches)
-       (where :pitch (comp scale/lower scale/lower scale/lower))))
-
-(def intro-reprise
-  (->> b-chord-line
-       (with intro-reprise-bass-line)
-       (with b-melody-line)
-       (with hihat-pattern)
-       (where :pitch (comp scale/F scale/major))
-       (tempo (bpm 120))))
-
-;;; ============================================================================
-;;; BRIDGE SECTION (Reggae 4/4 at 60 BPM)
-;;; ============================================================================
-
-;; Bridge section - halftime, 4/4, reggae feel
+;; Bridge section - halftime, 4/4
 (def bridge-chord-progression
   [(-> chord/triad (chord/root 1))   ; ii
    (-> chord/triad (chord/root 5))   ; vi
@@ -338,7 +341,7 @@
   [4 4 4 4])
 
 (def bridge-stabs-rhythm
-  ;; Reggae stabs on offbeats (2 and 4 of each bar)
+  ;; Stabs on offbeats (2 and 4 of each bar)
   ;; Pattern: rest-stab-rest-stab for each bar
   [1 1/2 1/2 1 1/2 1/2   ; bar 1: ii
    1 1/2 1/2 1 1/2 1/2   ; bar 2: vi
@@ -346,7 +349,7 @@
    1 1/2 1/2 1 1/2 1/2]) ; bar 4: V
 
 (def bridge-stabs-pitches
-  ;; Voicing for reggae stabs (5th and 3rd of each chord)
+  ;; Voicing for stabs (5th and 3rd of each chord)
   [5 3 5 3   ; ii chord (vi and IV degrees)
    5 3 2 3   ; vi chord (vi, IV, iii, IV degrees) - 7th note goes down
    4 2 4 2   ; V chord (V and iii degrees)

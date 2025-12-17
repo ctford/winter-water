@@ -10,23 +10,24 @@
 
 - **Intro** (no drums) → **Intro** (with hihat)
 - **A × 2** → **B × 2** → **A-doubled × 2** → **B-harmony × 2**
-- **Intro-reprise × 2** (with bass) → **Bridge × 2** (reggae 4/4)
+- **Intro-reprise × 2** (IV vi bass pattern) → **Bridge × 2** (4/4 halftime)
 - **Double-chorus × 4** → **Outro** (texture only)
 
 ### Chord Progressions
 
-- **Intro:** Bbsus2 → Dm7 → Bbmaj7 → Dm9 (power chord voicings)
+- **Intro:** IVsus2/I → vi7/I → IVmaj7/I → vi9/I (power chord voicings over I pedal)
+- **Intro reprise:** IV → vi → IV → vi (alternating bass)
 - **Main sections:** Various triads in 7/8 time
-- **Bridge:** F → C → Bb → Bb (reggae stabs on offbeats)
+- **Bridge:** ii → vi → V → V (stabs on offbeats)
 
 ### Code Organization
 
 The code is organized with clear section dividers:
 - **Constants** - Bass filter/overdrive parameters
-- **Shared Material** - Chord progressions, rhythms, melodies
-- **Intro Section** - Opening material
+- **Shared Material** - Chord progressions, rhythms, melodies, b-section power chords
+- **Intro Section** - Opening material and intro reprise
 - **Main Sections** - A & B sections with variations
-- **Bridge Section** - Reggae 4/4 material
+- **Bridge Section** - 4/4 halftime material
 - **Instruments** - Synth definitions
 - **Play Methods** - Instrument routing & mixing
 
