@@ -466,25 +466,28 @@
        (then double-chorus)
        (then outro)))
 
-;; Add pitch shift effect that gradually raises pitch by a major third (4 semitones)
+;; Add pitch shift effect that gradually raises pitch by ~10.4 semitones (minor 7th)
 (defn gradual-pitch-shift
-  "Shifts pitch values from 0 to ~3.86 semitones (major third) based on time position."
+  "Shifts pitch values from 0 to ~10.4 semitones based on time position.
+  Calibrated so 1st to 2nd A section has 2 semitone difference."
   [notes]
-  (let [;; Find the latest note end time to get total duration
-        max-time (apply max (map #(+ (:time %) (:duration %)) notes))
-        ;; Major third = 1.2x frequency ratio = ~3.86 semitones
-        max-semitones (* 12 (Math/log (/ 1.2 1.0)) (/ 1 (Math/log 2)))
-        ;; Add pitch shift based on time position
+  (let [;; Target: 2 semitones difference between times 14 and 42 (28 beats apart)
+        ;; Rate: 2/28 = 0.0714 semitones/beat
+        semitones-per-beat (/ 2.0 28.0)
+        ;; Add pitch shift based on absolute time (not fraction)
         add-shift (fn [note]
                     (if (:pitch note) ; Only shift pitched notes
-                      (let [time-fraction (/ (:time note) max-time)
-                            semitone-shift (* time-fraction max-semitones)]
+                      (let [semitone-shift (* (:time note) semitones-per-beat)]
                         (update note :pitch + semitone-shift))
                       note))]
     (map add-shift notes)))
 
 ;; Main song var - update this to change what's playing
-(def winter-water (gradual-pitch-shift full-arrangement))
+;; Transpose down by perfect fourth (5 semitones) then apply gradual upward shift
+(def winter-water
+  (->> full-arrangement
+       (where :pitch #(- % 5)) ; Drop by a fourth
+       gradual-pitch-shift))
 
 ;;; ============================================================================
 ;;; INSTRUMENTS
