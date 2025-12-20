@@ -454,8 +454,25 @@
        (then double-chorus)
        (then outro)))
 
+;; Add pitch shift effect that gradually raises pitch by a major third (4 semitones)
+(defn gradual-pitch-shift
+  "Shifts pitch values from 0 to ~3.86 semitones (major third) based on time position."
+  [notes]
+  (let [;; Find the latest note end time to get total duration
+        max-time (apply max (map #(+ (:time %) (:duration %)) notes))
+        ;; Major third = 1.2x frequency ratio = ~3.86 semitones
+        max-semitones (* 12 (Math/log (/ 1.2 1.0)) (/ 1 (Math/log 2)))
+        ;; Add pitch shift based on time position
+        add-shift (fn [note]
+                    (if (:pitch note) ; Only shift pitched notes
+                      (let [time-fraction (/ (:time note) max-time)
+                            semitone-shift (* time-fraction max-semitones)]
+                        (update note :pitch + semitone-shift))
+                      note))]
+    (map add-shift notes)))
+
 ;; Main song var - update this to change what's playing
-(def winter-water full-arrangement)
+(def winter-water (gradual-pitch-shift full-arrangement))
 
 ;;; ============================================================================
 ;;; INSTRUMENTS
@@ -471,7 +488,7 @@
         (+ (* 1/3 (sin-osc (* 2 freq))))
         (+ (* 1/2 (sin-osc (* 3 freq))))
         (+ (* 1/3 (sin-osc (* 5 freq))))
-        (* (square 1.75)) ; 1.75 Hz tremolo
+        (* (square 2))
         (* bass-pre-gain) ; boost before clipping for heavy overdrive
         (clip2 bass-clip-threshold) ; aggressive clipping threshold
         (* bass-post-gain) ; make up gain after clipping
@@ -588,12 +605,12 @@
 ;;; ============================================================================
 
 (defmethod live/play-note :default
-  [{midi :pitch seconds :duration}]
+  [{midi :pitch seconds :duration :as note}]
   (let [freq (midi->hz midi)]
     (bass freq seconds :volume 0.85 :pan 0)))
 
 (defmethod live/play-note :chords
-  [{midi :pitch seconds :duration}]
+  [{midi :pitch seconds :duration :as note}]
   (let [freq (midi->hz midi)]
     (organ freq seconds :volume 0.2 :pan (- 0.2 (* 0.4 (rand))))))
 
@@ -610,12 +627,12 @@
   (hihat 8000 seconds :volume 0.25 :pan 0.3))
 
 (defmethod live/play-note :melody
-  [{midi :pitch seconds :duration}]
+  [{midi :pitch seconds :duration :as note}]
   (let [freq (midi->hz midi)]
     (breathy-lead freq seconds :volume 0.8 :pan -0.1)))
 
 (defmethod live/play-note :melody-pad
-  [{midi :pitch seconds :duration}]
+  [{midi :pitch seconds :duration :as note}]
   (let [freq (midi->hz midi)]
     (breathy-pad freq seconds :volume 0.35 :pan 0.4)))
 
@@ -625,22 +642,22 @@
     (ambient-texture 200 seconds :volume vol :pan (- 0.5 (rand)))))
 
 (defmethod live/play-note :bridge-stabs
-  [{midi :pitch seconds :duration}]
+  [{midi :pitch seconds :duration :as note}]
   (let [freq (midi->hz midi)]
     (reggae-stabs freq seconds :volume 0.8 :pan (- 0.3 (* 0.6 (rand))))))
 
 (defmethod live/play-note :bridge-organ-stabs
-  [{midi :pitch seconds :duration}]
+  [{midi :pitch seconds :duration :as note}]
   (let [freq (midi->hz midi)]
     (organ freq seconds :volume 0.15 :pan (- 0.2 (* 0.4 (rand))))))
 
 (defmethod live/play-note :bridge-bass
-  [{midi :pitch seconds :duration}]
+  [{midi :pitch seconds :duration :as note}]
   (let [freq (midi->hz midi)]
     (bass freq seconds :volume 0.75 :pan 0)))
 
 (defmethod live/play-note :bridge-melody
-  [{midi :pitch seconds :duration}]
+  [{midi :pitch seconds :duration :as note}]
   (let [freq (midi->hz midi)]
     (breathy-lead freq seconds :volume 0.8 :pan 0)))
 
