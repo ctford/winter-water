@@ -147,10 +147,10 @@
   [7/2 7/2 7/2 7/2])
 
 (def b-power-chords
-  [[[0 3] [0 4]]  ; [I IV] + [I V] = IVsus2/I
-   [[0 4] [0 5]]  ; [I V] + [I vi] = vi7/I
-   [[0 2] [0 3]]  ; [I iii] + [I IV] = IVmaj7/I
-   [[0 5] [0 6]]]) ; [I vi] + [I vii°] = vi9/I
+  [[[0 3] [0 11]]  ; [I IV] + [I V] = IVsus2/I (upper note raised an octave)
+   [[0 4] [0 12]]  ; [I V] + [I vi] = vi7/I (upper note raised an octave)
+   [[0 2] [0 10]]  ; [I iii] + [I IV] = IVmaj7/I (upper note raised an octave)
+   [[0 5] [0 13]]]) ; [I vi] + [I vii°] = vi9/I (upper note raised an octave)
 
 (def b-chord-line
   (->> (phrase b-power-chords-rhythm b-power-chords)
@@ -466,27 +466,27 @@
        (then double-chorus)
        (then outro)))
 
-;; Add pitch shift effect that gradually raises pitch by ~10.4 semitones (minor 7th)
+;; Add pitch shift effect that gradually lowers pitch by ~10.4 semitones (minor 7th)
 (defn gradual-pitch-shift
-  "Shifts pitch values from 0 to ~10.4 semitones based on time position.
-  Calibrated so 1st to 2nd A section has 2 semitone difference."
+  "Shifts pitch values from 0 to ~-10.4 semitones based on time position.
+  Calibrated so 1st to 2nd A section has 2 semitone difference (descending)."
   [notes]
   (let [;; Target: 2 semitones difference between times 14 and 42 (28 beats apart)
-        ;; Rate: 2/28 = 0.0714 semitones/beat
+        ;; Rate: 2/28 = 0.0714 semitones/beat (descending)
         semitones-per-beat (/ 2.0 28.0)
-        ;; Add pitch shift based on absolute time (not fraction)
+        ;; Subtract pitch shift based on absolute time (descending)
         add-shift (fn [note]
                     (if (:pitch note) ; Only shift pitched notes
                       (let [semitone-shift (* (:time note) semitones-per-beat)]
-                        (update note :pitch + semitone-shift))
+                        (update note :pitch - semitone-shift))
                       note))]
     (map add-shift notes)))
 
 ;; Main song var - update this to change what's playing
-;; Transpose down by perfect fourth (5 semitones) then apply gradual upward shift
+;; Transpose up by perfect fourth (5 semitones) then apply gradual downward shift
 (def winter-water
   (->> full-arrangement
-       (where :pitch #(- % 5)) ; Drop by a fourth
+       (where :pitch #(+ % 5)) ; Raise by a fourth
        gradual-pitch-shift))
 
 ;;; ============================================================================
