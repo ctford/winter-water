@@ -46,10 +46,10 @@
 ;; Control bus for shared bass LFO (provides continuity across all bass notes)
 (defonce bass-lfo-bus (control-bus))
 
-;; Global LFO synth that writes to the bass bus
+;; Global LFO synth for filter movement
 (defonce bass-lfo-synth
   (defsynth bass-lfo []
-    (out:kr bass-lfo-bus (lf-noise1:kr bass-filter-lfo-rate))))
+    (out:kr bass-lfo-bus (lf-noise1:kr 6.0))))
 
 ;; Start the LFO synth
 (defonce start-bass-lfo (bass-lfo))
@@ -471,7 +471,7 @@
         (+ (* 1/3 (sin-osc (* 2 freq))))
         (+ (* 1/2 (sin-osc (* 3 freq))))
         (+ (* 1/3 (sin-osc (* 5 freq))))
-        (* (square 2))
+        (* (square 1.75)) ; 1.75 Hz tremolo
         (* bass-pre-gain) ; boost before clipping for heavy overdrive
         (clip2 bass-clip-threshold) ; aggressive clipping threshold
         (* bass-post-gain) ; make up gain after clipping
