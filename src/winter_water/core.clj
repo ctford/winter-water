@@ -451,7 +451,12 @@
        (where :pitch (comp scale/F scale/major))
        (tempo (bpm 60))))
 
-;; Full arrangement: intro (no drums), intro with drums, a (2x), b (2x), a-doubled (2x), b-harmony (2x, second time with lower harmonies), intro-reprise (2x), bridge, bridge-with-stabs, double-chorus, outro -> repeat
+;; Double-chorus fill - two quick hihat hits before the final climax
+(def double-chorus-fill
+  (->> (phrase [1/4 1/4] [0 0])
+       (all :part :hihat)))
+
+;; Full arrangement: intro (no drums), intro with drums, a (2x), b (2x), a-doubled (2x), b-harmony (2x, second time with lower harmonies), intro-reprise (2x), bridge, bridge-with-stabs, fill, double-chorus, outro -> repeat
 (def full-arrangement
   (->> intro
        (then intro-with-drums)
@@ -463,30 +468,31 @@
        (then (times 2 intro-reprise))
        (then bridge)
        (then bridge-with-stabs)
+       (then double-chorus-fill)
        (then double-chorus)
        (then outro)))
 
-;; Add pitch shift effect that gradually lowers pitch by ~10.4 semitones (minor 7th)
+;; Add pitch shift effect that gradually raises pitch by ~10.4 semitones (minor 7th)
 (defn gradual-pitch-shift
-  "Shifts pitch values from 0 to ~-10.4 semitones based on time position.
-  Calibrated so 1st to 2nd A section has 2 semitone difference (descending)."
+  "Shifts pitch values from 0 to ~10.4 semitones based on time position.
+  Calibrated so 1st to 2nd A section has 2 semitone difference (ascending)."
   [notes]
   (let [;; Target: 2 semitones difference between times 14 and 42 (28 beats apart)
-        ;; Rate: 2/28 = 0.0714 semitones/beat (descending)
+        ;; Rate: 2/28 = 0.0714 semitones/beat (ascending)
         semitones-per-beat (/ 2.0 28.0)
-        ;; Subtract pitch shift based on absolute time (descending)
+        ;; Add pitch shift based on absolute time (ascending)
         add-shift (fn [note]
                     (if (:pitch note) ; Only shift pitched notes
                       (let [semitone-shift (* (:time note) semitones-per-beat)]
-                        (update note :pitch - semitone-shift))
+                        (update note :pitch + semitone-shift))
                       note))]
     (map add-shift notes)))
 
 ;; Main song var - update this to change what's playing
-;; Transpose up by perfect fourth (5 semitones) then apply gradual downward shift
+;; Transpose down by perfect fourth (5 semitones) then apply gradual upward shift
 (def winter-water
   (->> full-arrangement
-       (where :pitch #(+ % 5)) ; Raise by a fourth
+       (where :pitch #(- % 5)) ; Drop by a fourth
        gradual-pitch-shift))
 
 ;;; ============================================================================
