@@ -208,7 +208,7 @@
   [7/2 7/2 7/2 7/2]) ; one bar each, fills all 4 bars
 
 (def intro-reprise-bass-pitches
-  [3 5 3 5]) ; IV, vi, IV, vi - continuous cycle
+  [3 -2 3 -2]) ; IV, vi (lower octave), IV, vi (lower octave) - alternating pattern
 
 (def intro-reprise-bass-line
   (->> (phrase intro-reprise-bass-rhythm intro-reprise-bass-pitches)
@@ -281,7 +281,7 @@
   [7/2 7/2 7/2 7/2])
 
 (def b-bass-pitches
-  [3 4 2 5])
+  [3 4 2 -2])
 
 (def b-bass-line
   (->> (phrase b-bass-rhythm b-bass-pitches)
@@ -371,13 +371,22 @@
   ;; Simple bass on 1 and 3 of each bar (one drop feel)
   [2 2 2 2 2 2 2 2])
 
+(def bridge-bass-rhythm-shortened
+  ;; Same as bridge-bass-rhythm but last note shortened by 0.5 beats (one tremolo wobble at 2 Hz)
+  [2 2 2 2 2 2 2 1.5])
+
 (def bridge-bass-pitches
   ;; Root notes: ii, ii, vi, vi, V, V, V, V
   [1 1 5 5 4 4 4 4])
 
 (def bridge-bass-line
   (->> (phrase bridge-bass-rhythm bridge-bass-pitches)
-       (where :pitch (comp scale/lower scale/lower scale/lower))
+       (where :pitch (comp scale/lower scale/lower scale/lower scale/lower))
+       (all :part :bridge-bass)))
+
+(def bridge-bass-line-shortened
+  (->> (phrase bridge-bass-rhythm-shortened bridge-bass-pitches)
+       (where :pitch (comp scale/lower scale/lower scale/lower scale/lower))
        (all :part :bridge-bass)))
 
 (def bridge-melody-rhythm
@@ -429,13 +438,15 @@
        (tempo (bpm 60))))
 
 (def bridge-with-stabs
-  (->> bridge-bass-line
+  (->> bridge-bass-line-shortened
        (with bridge-stabs)
        (with bridge-organ-stabs)
        (with bridge-melody)
        (with bridge-kick-pattern)
        (with bridge-snare-pattern)
        (with bridge-tictoc-pattern)
+       ;; Trim any notes that start at or after 15.5 beats (shortens final bar by 0.5 beats)
+       (take-while (fn [note] (< (:time note) 15.5)))
        (where :pitch (comp scale/F scale/major))
        (tempo (bpm 60))))
 
