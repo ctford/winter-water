@@ -96,11 +96,12 @@
        (all :part :kick)))
 
 (def snare-rhythm
-  ;; 2-bar pattern repeated twice, avoiding hits on bar starts
-  [2 3 1/2 1 5/2 3 1/2 1 1/2])
+  ;; 2-bar pattern repeated twice, avoiding hits on bar starts, first hit removed
+  [3 1/2 1 5/2 3 1/2 1 1/2])
 
 (def snare-pattern
   (->> (phrase snare-rhythm (repeat 0))
+       (after 2) ; shift pattern by 2 beats to preserve original timing
        (all :part :snare)))
 
 (def hihat-rhythm
@@ -203,12 +204,12 @@
        (where :pitch (comp scale/F scale/major))
        (tempo (bpm 120))))
 
-;; Intro reprise - with alternating IV/vi bass (continuous cycling)
+;; Intro reprise - with alternating IV/vi bass with descending run
 (def intro-reprise-bass-rhythm
-  [7/2 7/2 7/2 7/2]) ; one bar each, fills all 4 bars
+  [5/2 1/2 1/2 7/2 5/2 1/2 1/2 7/2]) ; descending run before each -2
 
 (def intro-reprise-bass-pitches
-  [3 -2 3 -2]) ; IV, vi (lower octave), IV, vi (lower octave) - alternating pattern
+  [3 2 0 -2 3 2 0 -2]) ; IV, walk down (IV-iii-I-vi), repeat
 
 (def intro-reprise-bass-line
   (->> (phrase intro-reprise-bass-rhythm intro-reprise-bass-pitches)
@@ -277,11 +278,11 @@
 
 ;; B section - sparse, contrasting arrangement
 (def b-bass-rhythm
-  ;; Sparser bass hits
-  [7/2 7/2 7/2 7/2])
+  ;; Bass with walkdowns on second and third phrases
+  [7/2 5/2 1/2 1/2 5/2 1/2 1/2 7/2])
 
 (def b-bass-pitches
-  [3 4 2 -2])
+  [3 4 4 3 2 1 0 -2])
 
 (def b-bass-line
   (->> (phrase b-bass-rhythm b-bass-pitches)
