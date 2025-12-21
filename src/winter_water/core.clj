@@ -448,15 +448,14 @@
        (with bridge-tictoc-pattern)
        ;; Trim any notes that start at or after 15.5 beats (shortens final bar by 0.5 beats)
        (take-while (fn [note] (< (:time note) 15.5)))
+       ;; Add two quick hihat hits in the shortened space (at 15.5 and 15.625)
+       (with (->> (phrase [1/8 1/8] [0 0])
+                  (after 15.5)
+                  (all :part :hihat)))
        (where :pitch (comp scale/F scale/major))
        (tempo (bpm 60))))
 
-;; Double-chorus fill - two quick hihat hits before the final climax
-(def double-chorus-fill
-  (->> (phrase [1/4 1/4] [0 0])
-       (all :part :hihat)))
-
-;; Full arrangement: intro (no drums), intro with drums, a (2x), b (2x), a-doubled (2x), b-harmony (2x, second time with lower harmonies), intro-reprise (2x), bridge, bridge-with-stabs, fill, double-chorus, outro -> repeat
+;; Full arrangement: intro (no drums), intro with drums, a (2x), b (2x), a-doubled (2x), b-harmony (2x, second time with lower harmonies), intro-reprise (2x), bridge, bridge-with-stabs, double-chorus, outro -> repeat
 (def full-arrangement
   (->> intro
        (then intro-with-drums)
@@ -468,7 +467,6 @@
        (then (times 2 intro-reprise))
        (then bridge)
        (then bridge-with-stabs)
-       (then double-chorus-fill)
        (then double-chorus)
        (then outro)))
 
